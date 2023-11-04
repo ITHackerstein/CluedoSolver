@@ -31,10 +31,23 @@ public:
 		return {};
 	}
 
-	// FIXME: Modifying any of these should try to "simplify" the possible cards array.
-	void add_in_hand_card(Card card) { m_cards_in_hand.insert(card); }
-	void add_not_in_hand_card(Card card) { m_cards_not_in_hand.insert(card); }
-	void add_possible_cards(std::unordered_set<Card> const& set) { m_possible_cards.push_back(set); }
+	void add_in_hand_card(Card card) {
+		m_cards_in_hand.insert(card);
+		simplify_possibilities_with_card(card, true);
+	}
+
+	void add_not_in_hand_card(Card card) {
+		m_cards_not_in_hand.insert(card);
+		simplify_possibilities_with_card(card, false);
+	}
+
+	void add_possible_cards(std::unordered_set<Card> const& set) {
+		m_possibilities.push_back(set);
+		remove_superfluous_possibilities();
+	}
+
+	void simplify_possibilities_with_card(Card, bool has_card);
+	void remove_superfluous_possibilities();
 
 private:
 	std::string m_name;
@@ -43,7 +56,7 @@ private:
 
 	std::unordered_set<Card> m_cards_in_hand;
 	std::unordered_set<Card> m_cards_not_in_hand;
-	std::vector<std::unordered_set<Card>> m_possible_cards;
+	std::vector<std::unordered_set<Card>> m_possibilities;
 };
 
 };
