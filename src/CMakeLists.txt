@@ -1,4 +1,7 @@
 add_executable(Cluedo
+	Error.cpp
+	Player.cpp
+	Solver.cpp
 	main.cpp
 )
 
@@ -11,7 +14,6 @@ target_compile_options(Cluedo PRIVATE
 	-Wcast-align
 	-Wunused
 	-Woverloaded-virtual
-	-Wpedantic
 	-Wconversion
 	-Wsign-conversion
 	-Wnull-dereference
