@@ -41,6 +41,8 @@ enum class Card : std::uint8_t {
 };
 
 struct CardUtils {
+	static constexpr std::size_t CARD_COUNT = static_cast<std::size_t>(Card::_Count);
+
 	static constexpr std::array card_categories { CardCategory::Suspect, CardCategory::Weapon, CardCategory::Room };
 
 	struct CardIterator {
