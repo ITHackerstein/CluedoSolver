@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <unordered_set>
 
 namespace Cluedo {
 
@@ -51,7 +52,7 @@ struct CardUtils {
 		constexpr CardIterator(std::uint8_t i)
 		  : index(i) {}
 
-		constexpr std::uint8_t operator*() const { return index; }
+		constexpr Card operator*() const { return static_cast<Card>(index); }
 		constexpr bool operator!=(CardIterator const& other) const { return index != other.index; }
 		constexpr void operator++() { ++index; }
 	};
@@ -61,12 +62,11 @@ struct CardUtils {
 		constexpr CardIterator end() const { return static_cast<std::uint8_t>(Card::_Count); }
 	};
 
-	struct cards_per_type {
+	struct cards_per_category {
 		CardCategory category;
-		explicit constexpr cards_per_type(CardCategory c)
+		explicit constexpr cards_per_category(CardCategory c)
 		  : category(c) {}
 
-		typedef std::uint8_t iterator;
 		constexpr CardIterator begin() const { return static_cast<std::uint8_t>(category); }
 		constexpr CardIterator end() const {
 			std::uint8_t count;
@@ -87,4 +87,14 @@ struct CardUtils {
 	};
 };
 
+};
+
+template<>
+struct std::hash<std::unordered_set<Cluedo::Card>> {
+	std::size_t operator()(std::unordered_set<Cluedo::Card> const& set) {
+		std::size_t result = 0;
+		for (auto const& card : set)
+			result ^= std::hash<std::uint8_t> {}(static_cast<std::uint8_t>(card));
+		return result;
+	}
 };
