@@ -46,10 +46,10 @@ public:
 		remove_superfluous_possibilities();
 	}
 
+private:
 	void simplify_possibilities_with_card(Card, bool has_card);
 	void remove_superfluous_possibilities();
 
-private:
 	std::string m_name;
 	std::size_t m_n_cards;
 	bool m_is_solution;
