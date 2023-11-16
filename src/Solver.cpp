@@ -66,7 +66,7 @@ void Solver::infer_new_information() {
 	for (auto card : CardUtils::cards()) {
 		bool card_owned = false;
 		std::size_t player_who_dont_own_card_count = 0;
-		std::size_t player_index_who_might_have_card;
+		std::size_t player_index_who_might_have_card = m_players.size();
 
 		for (std::size_t player_index = 0; player_index < m_players.size(); ++player_index) {
 			auto card_state = m_players.at(player_index).has_card(card);
@@ -87,8 +87,10 @@ void Solver::infer_new_information() {
 			}
 		}
 
-		if (!card_owned && player_who_dont_own_card_count == m_players.size() - 1)
+		if (!card_owned && player_who_dont_own_card_count == m_players.size() - 1) {
+			assert(player_index_who_might_have_card < m_players.size());
 			learn_player_card_state(player_index_who_might_have_card, card, true, false);
+		}
 	}
 
 	// Here we try to infer some more specific information on the solution knowing it has one card of each category.
@@ -125,7 +127,7 @@ void Solver::infer_new_information() {
 	for (std::size_t player_index = 0; player_index < m_players.size() - 1; ++player_index) {
 		for (auto const& possibility : m_players.at(player_index).possibilities()) {
 			if (!possibilities_to_players_map.contains(possibility))
-				possibilities_to_players_map.insert(possibility, {});
+				possibilities_to_players_map.insert({ possibility, {} });
 
 			possibilities_to_players_map.at(possibility).insert(player_index);
 		}
