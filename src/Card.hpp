@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <string_view>
 #include <unordered_set>
 
 namespace Cluedo {
@@ -12,39 +13,63 @@ enum class CardCategory : std::uint8_t {
 	Room = 12
 };
 
+#define _ENUMERATE_SUSPECTS \
+	_ENUMERATE_CARD(Green)    \
+	_ENUMERATE_CARD(Mustard)  \
+	_ENUMERATE_CARD(Orchid)   \
+	_ENUMERATE_CARD(Peacock)  \
+	_ENUMERATE_CARD(Plum)     \
+	_ENUMERATE_CARD(Scarlet)
+
+#define _ENUMERATE_WEAPONS     \
+	_ENUMERATE_CARD(Candlestick) \
+	_ENUMERATE_CARD(Knife)       \
+	_ENUMERATE_CARD(Pipe)        \
+	_ENUMERATE_CARD(Pistol)      \
+	_ENUMERATE_CARD(Rope)        \
+	_ENUMERATE_CARD(Wrench)
+
+#define _ENUMERATE_ROOMS       \
+	_ENUMERATE_CARD(BallardRoom) \
+	_ENUMERATE_CARD(Ballroom)    \
+	_ENUMERATE_CARD(DiningRoom)  \
+	_ENUMERATE_CARD(Greenhouse)  \
+	_ENUMERATE_CARD(Hall)        \
+	_ENUMERATE_CARD(Kitchen)     \
+	_ENUMERATE_CARD(Library)     \
+	_ENUMERATE_CARD(Lounge)      \
+	_ENUMERATE_CARD(Study)
+
+#define _ENUMERATE_CARDS \
+	_ENUMERATE_SUSPECTS    \
+	_ENUMERATE_WEAPONS     \
+	_ENUMERATE_ROOMS
+
 enum class Card : std::uint8_t {
-	// Suspects
-	Green,
-	Mustard,
-	Orchid,
-	Peacock,
-	Plum,
-	Scarlet,
-	// Weapons
-	Candlestick,
-	Knife,
-	Pipe,
-	Pistol,
-	Rope,
-	Wrench,
-	// Rooms
-	BallardRoom,
-	Ballroom,
-	DiningRoom,
-	Greenhouse,
-	Hall,
-	Kitchen,
-	Library,
-	Lounge,
-	Study,
-	// Used to count cards
-	_Count
+#define _ENUMERATE_CARD(x) x,
+	_ENUMERATE_CARDS
+#undef _ENUMERATE_CARD
+	  _Count
 };
+
+std::string_view format_as(Card card);
 
 struct CardUtils {
 	static constexpr std::size_t CARD_COUNT = static_cast<std::size_t>(Card::_Count);
 
 	static constexpr std::array card_categories { CardCategory::Suspect, CardCategory::Weapon, CardCategory::Room };
+
+	static constexpr CardCategory card_category(Card card) {
+		auto card_u8 = static_cast<std::uint8_t>(card);
+
+		if (card_u8 < static_cast<std::uint8_t>(CardCategory::Weapon))
+			return CardCategory::Suspect;
+
+		if (card_u8 < static_cast<std::uint8_t>(CardCategory::Room))
+			return CardCategory::Weapon;
+
+		return CardCategory::Room;
+	}
 
 	struct CardIterator {
 		std::uint8_t index;
