@@ -31,9 +31,6 @@ public:
 		return {};
 	}
 
-	// FIXME: This should be only accessed by Solver
-	std::vector<std::unordered_set<Card>> const& possibilities() const { return m_possibilities; }
-
 	void add_in_hand_card(Card card) {
 		m_cards_in_hand.insert(card);
 		simplify_possibilities_with_card(card, true);
