@@ -11,6 +11,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(fmt)
 
 add_executable(Cluedo
+	Card.cpp
 	Error.cpp
 	Player.cpp
 	Solver.cpp
@@ -34,4 +35,5 @@ target_compile_options(Cluedo PRIVATE
 	-Wimplicit-fallthrough
 	-Werror
 )
+target_include_directories(Cluedo PUBLIC ${CMAKE_SOURCE_DIR}/include/)
 target_link_libraries(Cluedo PRIVATE fmt::fmt)
