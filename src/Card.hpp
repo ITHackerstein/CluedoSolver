@@ -78,7 +78,7 @@ struct CardUtils {
 				count = 6;
 				break;
 			case CardCategory::Room:
-				count = 12;
+				count = 9;
 				break;
 			}
 
