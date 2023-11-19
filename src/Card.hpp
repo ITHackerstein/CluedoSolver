@@ -13,6 +13,8 @@ enum class CardCategory : std::uint8_t {
 	Room = 12
 };
 
+std::string_view format_as(CardCategory);
+
 #define _ENUMERATE_SUSPECTS \
 	_ENUMERATE_CARD(Green)    \
 	_ENUMERATE_CARD(Mustard)  \
@@ -52,7 +54,7 @@ enum class Card : std::uint8_t {
 	  _Count
 };
 
-std::string_view format_as(Card card);
+std::string_view format_as(Card);
 
 struct CardUtils {
 	static constexpr std::size_t CARD_COUNT = static_cast<std::size_t>(Card::_Count);
