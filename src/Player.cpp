@@ -22,7 +22,7 @@ void Player::remove_superfluous_possibilities() {
 	}
 
 	for (std::size_t i = m_possibilities.size(); i > 0; --i)
-		if (m_possibilities.at(i).empty())
+		if (m_possibilities.at(i - 1).empty())
 			m_possibilities.erase(m_possibilities.begin() + static_cast<ssize_t>(i - 1));
 }
 
