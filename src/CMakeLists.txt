@@ -4,11 +4,21 @@ FetchContent_Declare(
 	fmt
 	GIT_REPOSITORY https://github.com/fmtlib/fmt
 	GIT_TAG 10.1.1
-	GIT_PROGRESS TRUE
-	USES_TERMINAL_DOWNLOAD TRUE
 )
 
 FetchContent_MakeAvailable(fmt)
+
+FetchContent_Declare(
+	ftxui
+	GIT_REPOSITORY https://github.com/ArthurSonzogni/ftxui
+	GIT_TAG v5.0.0
+)
+
+FetchContent_GetProperties(ftxui)
+if(NOT ftxui_POPULATED)
+	FetchContent_Populate(ftxui)
+	add_subdirectory(${ftxui_SOURCE_DIR} ${ftxui_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif()
 
 add_executable(Cluedo
 	Card.cpp
@@ -36,4 +46,9 @@ target_compile_options(Cluedo PRIVATE
 	-Werror
 )
 target_include_directories(Cluedo PUBLIC ${CMAKE_SOURCE_DIR}/include/)
-target_link_libraries(Cluedo PRIVATE fmt::fmt)
+target_link_libraries(Cluedo
+	PRIVATE fmt::fmt
+	PRIVATE ftxui::screen
+	PRIVATE ftxui::dom
+	PRIVATE ftxui::component
+)
