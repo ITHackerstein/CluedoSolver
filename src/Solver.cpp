@@ -19,8 +19,10 @@ Result<Solver, Error> Solver::create(std::vector<PlayerData> const& players_data
 		return Error::InvalidNumberOfCards;
 
 	std::vector<Player> players;
-	for (auto const& player_data : players_data)
-		players.emplace_back(player_data.name, player_data.n_cards);
+	for (std::size_t i = 0; i < players_data.size(); ++i) {
+		auto name = !players_data.at(i).name.empty() ? players_data.at(i).name : fmt::format("Player {}", i + 1);
+		players.emplace_back(name, players_data.at(i).n_cards);
+	}
 	players.emplace_back("", SOLUTION_CARD_COUNT);
 
 	return Solver { std::move(players) };
