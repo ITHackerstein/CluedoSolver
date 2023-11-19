@@ -154,6 +154,9 @@ void Solver::infer_new_information() {
 }
 
 static void shuffle_cards(std::vector<Card>& cards, pcg64_fast& prng) {
+	if (cards.empty())
+		return;
+
 	for (std::size_t i = 0; i < cards.size() - 1; ++i) {
 		std::size_t j = prng(cards.size() - i) + i;
 		std::swap(cards.at(i), cards.at(j));
