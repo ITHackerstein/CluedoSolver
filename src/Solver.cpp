@@ -46,16 +46,20 @@ void Solver::learn_player_has_any_of_cards(std::size_t player_index, std::unorde
 }
 
 void Solver::learn_from_suggestion(Suggestion const& suggestion, bool infer_new_info) {
-	auto increment_cycling_index = [&](std::size_t index) { return (index + 1) % m_players.size(); };
 	auto response_index = suggestion.responding_player_index.value_or(solution_player_index());
 
-	for (auto player_index = increment_cycling_index(suggestion.suggesting_player_index); player_index != response_index; player_index = increment_cycling_index(player_index)) {
+	auto increment_cycling_index = [&](std::size_t index) { return (index + 1) % (m_players.size() - 1); };
+	for (auto player_index = increment_cycling_index(suggestion.suggesting_player_index); player_index != suggestion.suggesting_player_index && player_index != response_index; player_index = increment_cycling_index(player_index)) {
 		learn_player_card_state(player_index, suggestion.suspect, false, false);
 		learn_player_card_state(player_index, suggestion.weapon, false, false);
 		learn_player_card_state(player_index, suggestion.room, false, false);
 	}
 
-	if (response_index != solution_player_index()) {
+	if (response_index == solution_player_index()) {
+		learn_player_card_state(response_index, suggestion.suspect, true, false);
+		learn_player_card_state(response_index, suggestion.weapon, true, false);
+		learn_player_card_state(response_index, suggestion.room, true, false);
+	} else {
 		if (suggestion.response_card.has_value())
 			learn_player_card_state(response_index, *suggestion.response_card, true, false);
 		else
