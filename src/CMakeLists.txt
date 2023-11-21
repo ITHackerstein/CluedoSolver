@@ -25,6 +25,7 @@ add_executable(Cluedo
 	Error.cpp
 	Player.cpp
 	Solver.cpp
+	UI.cpp
 	main.cpp
 )
 
