@@ -2,11 +2,13 @@
 
 #include <PCG/pcg_random.hpp>
 #include <algorithm>
+#include <chrono>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <numeric>
 #include <random>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace Cluedo {
 
@@ -38,7 +40,7 @@ void Solver::learn_player_card_state(std::size_t player_index, Card card, bool h
 		infer_new_information();
 }
 
-void Solver::learn_player_has_any_of_cards(std::size_t player_index, std::unordered_set<Card> const& card_set, bool infer_new_info) {
+void Solver::learn_player_has_any_of_cards(std::size_t player_index, CardSet const& card_set, bool infer_new_info) {
 	player(player_index).add_possible_cards(card_set);
 
 	if (infer_new_info)
@@ -133,7 +135,7 @@ void Solver::infer_new_information() {
 	// This loops checks if any players have some possibilities in common.
 	// If there are and the number of players is greater than the number of cards in the possibility,
 	// then we know that all other players cannot have those cards.
-	std::unordered_map<std::unordered_set<Card>, std::unordered_set<std::size_t>> possibilities_to_players_map;
+	std::unordered_map<CardSet, std::unordered_set<std::size_t>> possibilities_to_players_map;
 	for (std::size_t player_index = 0; player_index < m_players.size() - 1; ++player_index) {
 		for (auto const& possibility : m_players.at(player_index).m_possibilities) {
 			if (!possibilities_to_players_map.contains(possibility))
@@ -189,18 +191,18 @@ bool Solver::assign_cards_randomly_to_players(std::vector<Card> const& cards) {
 }
 
 bool Solver::are_constraints_satisfied() const {
-	std::unordered_set<Card> all_player_cards;
+	CardSet all_player_cards;
 	for (auto const& player : m_players) {
 		if (player.m_cards_in_hand.size() != player.n_cards())
 			return false;
 
 		for (auto card : player.m_cards_in_hand) {
-			if (!all_player_cards.insert(card).second)
+			if (all_player_cards.insert(card))
 				return false;
 		}
 
 		for (auto possibility : player.m_possibilities) {
-			if (std::all_of(possibility.begin(), possibility.end(), [&player](auto const& card) { return !player.m_cards_in_hand.contains(card); }))
+			if (possibility.intersection(player.m_cards_in_hand).empty())
 				return false;
 		}
 	}

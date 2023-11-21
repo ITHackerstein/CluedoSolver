@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CardSet.hpp"
 #include "Error.hpp"
 #include "Player.hpp"
 #include "Utils/Result.hpp"
@@ -25,7 +26,7 @@ public:
 	Player& player(std::size_t player_index) { return m_players.at(player_index); }
 
 	void learn_player_card_state(std::size_t player_index, Card, bool has_card, bool infer_new_info = true);
-	void learn_player_has_any_of_cards(std::size_t player_index, std::unordered_set<Card> const&, bool infer_new_info = true);
+	void learn_player_has_any_of_cards(std::size_t player_index, CardSet const&, bool infer_new_info = true);
 
 	struct Suggestion {
 		std::size_t suggesting_player_index;

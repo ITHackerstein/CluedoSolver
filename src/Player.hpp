@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Card.hpp"
+#include "CardSet.hpp"
 
 #include <optional>
 #include <string>
-#include <unordered_set>
 #include <vector>
 
 namespace Cluedo {
@@ -41,7 +41,7 @@ public:
 		simplify_possibilities_with_card(card, false);
 	}
 
-	void add_possible_cards(std::unordered_set<Card> const& set) {
+	void add_possible_cards(CardSet const& set) {
 		m_possibilities.push_back(set);
 		remove_superfluous_possibilities();
 	}
@@ -53,9 +53,9 @@ private:
 	std::string m_name;
 	std::size_t m_n_cards;
 
-	std::unordered_set<Card> m_cards_in_hand;
-	std::unordered_set<Card> m_cards_not_in_hand;
-	std::vector<std::unordered_set<Card>> m_possibilities;
+	CardSet m_cards_in_hand;
+	CardSet m_cards_not_in_hand;
+	std::vector<CardSet> m_possibilities;
 };
 
 };

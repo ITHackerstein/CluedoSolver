@@ -3,7 +3,6 @@
 #include <array>
 #include <cstdint>
 #include <string_view>
-#include <unordered_set>
 
 namespace Cluedo {
 
@@ -114,14 +113,4 @@ struct CardUtils {
 	};
 };
 
-};
-
-template<>
-struct std::hash<std::unordered_set<Cluedo::Card>> {
-	std::size_t operator()(std::unordered_set<Cluedo::Card> const& set) const noexcept {
-		std::size_t result = 0;
-		for (auto const& card : set)
-			result ^= std::hash<std::uint8_t> {}(static_cast<std::uint8_t>(card));
-		return result;
-	}
 };

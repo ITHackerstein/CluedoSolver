@@ -29,6 +29,7 @@ add_executable(Cluedo
 )
 
 target_compile_options(Cluedo PRIVATE
+	-std=gnu++2b
 	-Wall
 	-Wextra
 	-Wshadow
