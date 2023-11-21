@@ -95,7 +95,7 @@ struct CardUtils {
 
 		constexpr CardIterator begin() const { return static_cast<std::uint8_t>(category); }
 		constexpr CardIterator end() const {
-			std::uint8_t count;
+			std::uint8_t count = 0;
 			switch (category) {
 			case CardCategory::Suspect:
 				count = 6;
