@@ -229,34 +229,22 @@ void game_ui() {
 	auto player_card_state_card_dropdown = ftxui::Dropdown(&cards, &player_card_state_card);
 
 	bool player_card_state_has_card = true;
-	auto player_card_state_has_card_checkbox = ftxui::Checkbox("Has card", &player_card_state_has_card);
+	auto player_card_state_has_card_checkbox = ftxui::Checkbox("has card", &player_card_state_has_card);
 
 	auto player_card_state_container = ftxui::Container::Vertical({ player_card_state_player_dropdown,
-	                                                                player_card_state_card_dropdown,
-	                                                                player_card_state_has_card_checkbox });
+	                                                                player_card_state_has_card_checkbox,
+	                                                                player_card_state_card_dropdown });
 
 	auto player_card_state_container_renderer = ftxui::Renderer(player_card_state_container, [&]() {
-		return ftxui::vbox(
-		  ftxui::hbox(
-		    ftxui::text("Player ") | ftxui::center,
-		    player_card_state_player_dropdown->Render()
-		  ),
-		  ftxui::hbox(
-		    ftxui::text("Card ") | ftxui::center,
-		    player_card_state_card_dropdown->Render()
-		  ),
-		  player_card_state_has_card_checkbox->Render()
+		return ftxui::hbox(
+		  player_card_state_player_dropdown->Render(),
+		  player_card_state_has_card_checkbox->Render() | ftxui::center,
+		  player_card_state_card_dropdown->Render()
 		);
 	});
 
 	int player_suggestion_suggesting_player = 0;
 	auto player_suggestion_suggesting_player_dropdown = ftxui::Dropdown(&player_names, &player_suggestion_suggesting_player);
-
-	std::vector<std::string> player_suggestion_responding_player_dropdown_entries = player_names;
-	player_suggestion_responding_player_dropdown_entries.insert(player_suggestion_responding_player_dropdown_entries.begin(), "No one");
-
-	int player_suggestion_responding_player = 0;
-	auto player_suggestion_responding_player_dropdown = ftxui::Dropdown(&player_suggestion_responding_player_dropdown_entries, &player_suggestion_responding_player);
 
 	int player_suggestion_suspect = 0;
 	auto player_suggestion_suspect_dropdown = ftxui::Dropdown(&cards_per_category.at(Cluedo::CardCategory::Suspect), &player_suggestion_suspect);
@@ -267,48 +255,44 @@ void game_ui() {
 	int player_suggestion_room = 0;
 	auto player_suggestion_room_dropdown = ftxui::Dropdown(&cards_per_category.at(Cluedo::CardCategory::Room), &player_suggestion_room);
 
+	std::vector<std::string> player_suggestion_responding_player_dropdown_entries = player_names;
+	player_suggestion_responding_player_dropdown_entries.insert(player_suggestion_responding_player_dropdown_entries.begin(), "No one");
+
+	int player_suggestion_responding_player = 0;
+	auto player_suggestion_responding_player_dropdown = ftxui::Dropdown(&player_suggestion_responding_player_dropdown_entries, &player_suggestion_responding_player);
+
+	auto player_response_text = ftxui::Renderer([&]() {
+		return (player_suggestion_responding_player != 0 ? ftxui::text("responded with") : ftxui::text("responded")) | ftxui::center;
+	});
+
 	std::vector<std::string> player_suggestion_responding_card_dropdown_entries { "Unknown" };
 	for (auto category : Cluedo::CardUtils::card_categories)
 		player_suggestion_responding_card_dropdown_entries.push_back(fmt::to_string(category));
 
 	int player_suggestion_responding_card = 0;
-	auto player_suggestion_responding_card_dropdown = ftxui::Dropdown(&player_suggestion_responding_card_dropdown_entries, &player_suggestion_responding_card);
+	auto player_suggestion_responding_card_dropdown = ftxui::Maybe(ftxui::Dropdown(&player_suggestion_responding_card_dropdown_entries, &player_suggestion_responding_card), [&]() {
+		return player_suggestion_responding_player != 0;
+	});
 
-	auto player_suggestion_container = ftxui::Container::Vertical({ player_suggestion_suggesting_player_dropdown,
-	                                                                player_suggestion_responding_player_dropdown,
-	                                                                ftxui::Container::Horizontal({
-	                                                                  player_suggestion_suspect_dropdown,
-	                                                                  player_suggestion_weapon_dropdown,
-	                                                                  player_suggestion_room_dropdown,
-	                                                                }),
-	                                                                player_suggestion_responding_card_dropdown });
+	auto player_suggestion_container = ftxui::Container::Vertical({ ftxui::Container::Horizontal({ player_suggestion_suggesting_player_dropdown,
+	                                                                                               player_suggestion_suspect_dropdown,
+	                                                                                               player_suggestion_weapon_dropdown,
+	                                                                                               player_suggestion_room_dropdown }),
+	                                                                ftxui::Container::Horizontal({ player_suggestion_responding_player_dropdown,
+	                                                                                               player_suggestion_responding_card_dropdown }) });
 
 	auto player_suggestion_container_renderer = ftxui::Renderer(player_suggestion_container, [&]() {
 		return ftxui::vbox(
 		  ftxui::hbox(
-		    ftxui::text("Suggesting player ") | ftxui::center,
-		    player_suggestion_suggesting_player_dropdown->Render()
+		    player_suggestion_suggesting_player_dropdown->Render(),
+		    ftxui::text("suggested") | ftxui::center,
+		    player_suggestion_suspect_dropdown->Render(),
+		    player_suggestion_weapon_dropdown->Render(),
+		    player_suggestion_room_dropdown->Render()
 		  ),
 		  ftxui::hbox(
-		    ftxui::text("Responding player ") | ftxui::center,
-		    player_suggestion_responding_player_dropdown->Render()
-		  ),
-		  ftxui::hbox(
-		    ftxui::vbox(
-		      ftxui::text("Suspect"),
-		      player_suggestion_suspect_dropdown->Render()
-		    ),
-		    ftxui::vbox(
-		      ftxui::text("Weapon"),
-		      player_suggestion_weapon_dropdown->Render()
-		    ),
-		    ftxui::vbox(
-		      ftxui::text("Room"),
-		      player_suggestion_room_dropdown->Render()
-		    )
-		  ),
-		  ftxui::hbox(
-		    ftxui::text("Responding card ") | ftxui::center,
+		    player_suggestion_responding_player_dropdown->Render(),
+		    player_response_text->Render(),
 		    player_suggestion_responding_card_dropdown->Render()
 		  )
 		);
