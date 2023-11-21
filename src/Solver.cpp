@@ -2,7 +2,6 @@
 
 #include <PCG/pcg_random.hpp>
 #include <algorithm>
-#include <chrono>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <numeric>
@@ -16,7 +15,7 @@ Result<Solver, Error> Solver::create(std::vector<PlayerData> const& players_data
 	if (players_data.size() < MIN_PLAYER_COUNT || players_data.size() > MAX_PLAYER_COUNT)
 		return Error::InvalidNumberOfPlayers;
 
-	std::size_t total_cards = std::accumulate(players_data.begin(), players_data.end(), 3ull, [](std::size_t const& accumulator, PlayerData const& player_data) { return accumulator + player_data.n_cards; });
+	std::size_t total_cards = std::accumulate(players_data.begin(), players_data.end(), SOLUTION_CARD_COUNT, [](std::size_t const& accumulator, PlayerData const& player_data) { return accumulator + player_data.n_cards; });
 	if (total_cards != CardUtils::CARD_COUNT)
 		return Error::InvalidNumberOfCards;
 
