@@ -49,8 +49,8 @@ public:
 			insert(card);
 	}
 
-	constexpr CardSet(std::bitset<CardUtils::CARD_COUNT> set):
-		m_set(set) {}
+	constexpr CardSet(std::bitset<CardUtils::CARD_COUNT> set)
+	  : m_set(set) {}
 
 	constexpr std::size_t size() const { return m_set.count(); }
 	constexpr bool empty() const { return size() == 0; }
@@ -70,7 +70,12 @@ public:
 	constexpr bool operator==(CardSet const& other) const = default;
 	constexpr bool operator!=(CardSet const& other) const = default;
 
-	constexpr CardSet intersection(CardSet const& other) const { return m_set & other.m_set; }
+	constexpr CardSet& set_union(CardSet const& other) {
+		m_set |= other.m_set;
+		return *this;
+	}
+
+	static constexpr CardSet intersection(CardSet const& a, CardSet const& b) { return a.m_set & b.m_set; }
 	constexpr bool is_subset(CardSet const& other) const { return (m_set & other.m_set) == m_set; }
 
 	constexpr iterator begin() const { return { m_set }; }

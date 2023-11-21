@@ -195,13 +195,13 @@ bool Solver::are_constraints_satisfied() const {
 		if (player.m_cards_in_hand.size() != player.n_cards())
 			return false;
 
-		for (auto card : player.m_cards_in_hand) {
-			if (all_player_cards.insert(card))
-				return false;
-		}
+		if (!CardSet::intersection(all_player_cards, player.m_cards_in_hand).empty())
+			return false;
+
+		all_player_cards.set_union(player.m_cards_in_hand);
 
 		for (auto possibility : player.m_possibilities) {
-			if (possibility.intersection(player.m_cards_in_hand).empty())
+			if (CardSet::intersection(possibility, player.m_cards_in_hand).empty())
 				return false;
 		}
 	}
