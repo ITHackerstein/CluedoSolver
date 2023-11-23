@@ -12,10 +12,12 @@ std::string_view format_as(Error error) {
 		return "invalid number of players!"sv;
 	case Error::InvalidNumberOfCards:
 		return "invalid number of cards!"sv;
-	default:
-		assert(false);
-		return ""sv;
+	case Error::SuggestingPlayerEqualToRespondingPlayer:
+		return "suggesting player is equal to responding player!"sv;
 	}
+
+	assert(false);
+	return ""sv;
 }
 
 }

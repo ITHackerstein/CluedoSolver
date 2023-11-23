@@ -62,11 +62,10 @@ namespace Cluedo {
 
 namespace UI {
 
-template<typename ValueType>
-ftxui::Component NumberInput(ValueType& value, std::optional<ValueType> minimum, std::optional<ValueType> maximum, std::optional<std::function<void()>> on_change) {
+ftxui::Component NumberInput(std::size_t& value, std::optional<std::size_t> minimum = {}, std::optional<std::size_t> maximum = {}, std::optional<std::function<void()>> on_change = {}) {
 	class Impl : public ftxui::ComponentBase {
 	public:
-		Impl(ValueType& value, std::optional<ValueType> minimum, std::optional<ValueType> maximum, std::optional<std::function<void()>> on_change)
+		Impl(std::size_t& value, std::optional<std::size_t> minimum, std::optional<std::size_t> maximum, std::optional<std::function<void()>> on_change)
 		  : m_value(value), m_minimum(minimum), m_maximum(maximum), m_on_change(on_change) {
 			m_decrease_button = ftxui::Button(
 			  "-", [&]() {
@@ -102,9 +101,9 @@ ftxui::Component NumberInput(ValueType& value, std::optional<ValueType> minimum,
 		}
 
 	private:
-		ValueType& m_value;
-		std::optional<ValueType> m_minimum;
-		std::optional<ValueType> m_maximum;
+		std::size_t& m_value;
+		std::optional<std::size_t> m_minimum;
+		std::optional<std::size_t> m_maximum;
 		std::optional<std::function<void()>> m_on_change;
 
 		ftxui::Component m_decrease_button;
@@ -115,14 +114,14 @@ ftxui::Component NumberInput(ValueType& value, std::optional<ValueType> minimum,
 }
 
 Solver create_solver() {
-	std::size_t player_count = Cluedo::Solver::MAX_PLAYER_COUNT;
-	std::vector<Cluedo::PlayerData> players_data;
-	players_data.resize(Cluedo::Solver::MAX_PLAYER_COUNT);
-	std::optional<Cluedo::Error> maybe_error;
-	std::optional<Cluedo::Solver> maybe_solver;
+	auto player_count = Solver::MAX_PLAYER_COUNT;
+	std::vector<PlayerData> players_data;
+	players_data.resize(Solver::MAX_PLAYER_COUNT);
+	std::optional<Error> maybe_error;
+	std::optional<Solver> maybe_solver;
 
 	auto reset_player_data = [&]() {
-		auto available_cards = Cluedo::CardUtils::CARD_COUNT - Cluedo::Solver::SOLUTION_CARD_COUNT;
+		auto available_cards = CardUtils::CARD_COUNT - Solver::SOLUTION_CARD_COUNT;
 		auto cards_per_player = available_cards / player_count;
 		auto remaining_cards = available_cards % player_count;
 
@@ -140,12 +139,12 @@ Solver create_solver() {
 
 	auto screen = ftxui::ScreenInteractive::Fullscreen();
 
-	auto player_count_number_input = NumberInput(player_count, std::make_optional(Cluedo::Solver::MIN_PLAYER_COUNT), std::make_optional(Cluedo::Solver::MAX_PLAYER_COUNT), reset_player_data) | ftxui::Renderer([](ftxui::Element inner) { return ftxui::hbox(ftxui::text("Number of players: "), inner); });
+	auto player_count_number_input = NumberInput(player_count, Solver::MIN_PLAYER_COUNT, Solver::MAX_PLAYER_COUNT, reset_player_data) | ftxui::Renderer([](ftxui::Element inner) { return ftxui::hbox(ftxui::text("Number of players: "), inner); });
 
 	ftxui::Components player_data_components;
 	for (std::size_t i = 0; i < player_count; ++i) {
 		auto player_name_input = ftxui::Input(&players_data.at(i).name, "Name...");
-		auto card_number_input = NumberInput(players_data.at(i).n_cards, std::make_optional(static_cast<std::size_t>(1)));
+		auto card_number_input = NumberInput(players_data.at(i).n_cards, 1);
 		auto player_data_container = ftxui::Container::Horizontal({ player_name_input, card_number_input }) | ftxui::Renderer([i, player_name_input, card_number_input](ftxui::Element) {
 			                             return ftxui::hbox(
 			                               ftxui::text(fmt::format("Player {} ", i + 1)),
@@ -163,7 +162,7 @@ Solver create_solver() {
 
 	auto submit_button = ftxui::Button(
 	  "Start game", [&]() {
-		  auto result = Cluedo::Solver::create(players_data);
+		  auto result = Solver::create(players_data);
 		  if (result.is_error()) {
 			  maybe_error = result.release_error();
 			  return;
@@ -200,241 +199,400 @@ Solver create_solver() {
 	return *maybe_solver;
 }
 
-void main() {
-	auto solver = Cluedo::UI::create_solver();
-
+struct ComponentData {
+	Solver solver;
 	std::vector<std::string> player_names;
-	for (std::size_t i = 0; i < solver.n_players(); ++i)
-		player_names.push_back(solver.player(i).name());
-
+	std::vector<std::string> player_names_optional;
+	std::vector<std::string> card_categories;
+	std::vector<std::string> card_categories_optional;
 	std::vector<std::string> cards;
-	std::unordered_map<Cluedo::CardCategory, std::vector<std::string>> cards_per_category;
+	std::unordered_map<CardCategory, std::vector<std::string>> cards_per_category;
 
-	for (auto category : Cluedo::CardUtils::card_categories) {
-		cards_per_category.insert({ category, {} });
-		for (auto card : Cluedo::CardUtils::cards_per_category(category)) {
-			auto s = fmt::to_string(card);
-			cards.push_back(s);
-			cards_per_category.at(category).push_back(s);
+	ComponentData(Solver&& solver_)
+	  : solver(std::move(solver_)) {
+		player_names_optional.push_back("No one");
+
+		for (std::size_t i = 0; i < solver.n_players(); ++i) {
+			auto const& name = solver.player(i).name();
+			player_names.push_back(name);
+			player_names_optional.push_back(name);
+		}
+
+		card_categories_optional.push_back("Unknown");
+		for (auto category : CardUtils::card_categories) {
+			auto card_category_string = fmt::to_string(category);
+			card_categories.push_back(card_category_string);
+			card_categories_optional.push_back(card_category_string);
+			cards_per_category.insert({ category, {} });
+			for (auto card : CardUtils::cards_per_category(category)) {
+				auto card_string = fmt::to_string(card);
+				cards.push_back(card_string);
+				cards_per_category.at(category).push_back(card_string);
+			}
 		}
 	}
+};
 
-	std::vector<std::string> information_history;
-	std::vector<Cluedo::Solver::SolutionProbabilityPair> most_likely_solutions;
+class LearnPlayerCardStateTabBase : public ftxui::ComponentBase {
+public:
+	LearnPlayerCardStateTabBase(ComponentData& data)
+	  : m_player(0), m_has_card(true), m_card(0) {
+		m_player_dropdown = ftxui::Dropdown(&data.player_names, &m_player);
+		m_has_card_checkbox = ftxui::Checkbox("has card", &m_has_card);
+		m_card_dropdown = ftxui::Dropdown(&data.cards, &m_card);
 
-	int player_card_state_player = 0;
-	auto player_card_state_player_dropdown = ftxui::Dropdown(&player_names, &player_card_state_player);
+		Add(ftxui::Container::Horizontal({ m_player_dropdown, m_has_card_checkbox, m_card_dropdown }));
+	}
 
-	int player_card_state_card = 0;
-	auto player_card_state_card_dropdown = ftxui::Dropdown(&cards, &player_card_state_card);
+	std::size_t player() const { return static_cast<std::size_t>(m_player); }
+	bool has_card() const { return m_has_card; }
+	Card card() const { return static_cast<Card>(m_card); }
 
-	bool player_card_state_has_card = true;
-	auto player_card_state_has_card_checkbox = ftxui::Checkbox("has card", &player_card_state_has_card);
-
-	auto player_card_state_container = ftxui::Container::Vertical({ player_card_state_player_dropdown,
-	                                                                player_card_state_has_card_checkbox,
-	                                                                player_card_state_card_dropdown });
-
-	auto player_card_state_container_renderer = ftxui::Renderer(player_card_state_container, [&]() {
+	ftxui::Element Render() override {
 		return ftxui::hbox(
-		  player_card_state_player_dropdown->Render(),
-		  player_card_state_has_card_checkbox->Render() | ftxui::center,
-		  player_card_state_card_dropdown->Render()
+		  m_player_dropdown->Render(),
+		  m_has_card_checkbox->Render() | ftxui::borderEmpty,
+		  m_card_dropdown->Render()
 		);
-	});
+	}
 
-	int player_suggestion_suggesting_player = 0;
-	auto player_suggestion_suggesting_player_dropdown = ftxui::Dropdown(&player_names, &player_suggestion_suggesting_player);
+private:
+	int m_player;
+	bool m_has_card;
+	int m_card;
 
-	int player_suggestion_suspect = 0;
-	auto player_suggestion_suspect_dropdown = ftxui::Dropdown(&cards_per_category.at(Cluedo::CardCategory::Suspect), &player_suggestion_suspect);
+	ftxui::Component m_player_dropdown;
+	ftxui::Component m_has_card_checkbox;
+	ftxui::Component m_card_dropdown;
+};
 
-	int player_suggestion_weapon = 0;
-	auto player_suggestion_weapon_dropdown = ftxui::Dropdown(&cards_per_category.at(Cluedo::CardCategory::Weapon), &player_suggestion_weapon);
+std::shared_ptr<LearnPlayerCardStateTabBase> LearnPlayerCardStateTab(ComponentData& data) { return ftxui::Make<LearnPlayerCardStateTabBase>(data); }
 
-	int player_suggestion_room = 0;
-	auto player_suggestion_room_dropdown = ftxui::Dropdown(&cards_per_category.at(Cluedo::CardCategory::Room), &player_suggestion_room);
+class LearnFromSuggestionTabBase : public ftxui::ComponentBase {
+public:
+	LearnFromSuggestionTabBase(ComponentData& data)
+	  : m_suggesting_player(0)
+	  , m_suspect(0)
+	  , m_weapon(0)
+	  , m_room(0)
+	  , m_responding_player(0)
+	  , m_responding_card(0) {
+		m_suggesting_player_dropdown = ftxui::Dropdown(&data.player_names, &m_suggesting_player);
+		m_suspect_dropdown = ftxui::Dropdown(&data.cards_per_category.at(CardCategory::Suspect), &m_suspect);
+		m_weapon_dropdown = ftxui::Dropdown(&data.cards_per_category.at(CardCategory::Weapon), &m_weapon);
+		m_room_dropdown = ftxui::Dropdown(&data.cards_per_category.at(CardCategory::Room), &m_room);
+		m_responding_player_dropdown = ftxui::Dropdown(&data.player_names_optional, &m_responding_player);
+		m_responding_card_dropdown = ftxui::Maybe(ftxui::Dropdown(&data.card_categories_optional, &m_responding_card), [&]() { return m_responding_player != 0; });
 
-	std::vector<std::string> player_suggestion_responding_player_dropdown_entries = player_names;
-	player_suggestion_responding_player_dropdown_entries.insert(player_suggestion_responding_player_dropdown_entries.begin(), "No one");
+		Add(ftxui::Container::Vertical({ ftxui::Container::Horizontal({ m_suggesting_player_dropdown,
+		                                                                m_suspect_dropdown,
+		                                                                m_weapon_dropdown,
+		                                                                m_room_dropdown }),
+		                                 ftxui::Container::Horizontal({ m_responding_player_dropdown,
+		                                                                m_responding_card_dropdown }) }));
+	}
 
-	int player_suggestion_responding_player = 0;
-	auto player_suggestion_responding_player_dropdown = ftxui::Dropdown(&player_suggestion_responding_player_dropdown_entries, &player_suggestion_responding_player);
+	Result<Solver::Suggestion, Error> suggestion() const {
+		Solver::Suggestion suggestion;
 
-	auto player_response_text = ftxui::Renderer([&]() {
-		return (player_suggestion_responding_player != 0 ? ftxui::text("responded with") : ftxui::text("responded")) | ftxui::center;
-	});
+		suggestion.suggesting_player_index = static_cast<std::size_t>(m_suggesting_player);
+		suggestion.suspect = static_cast<Card>(m_suspect + static_cast<int>(CardCategory::Suspect));
+		suggestion.weapon = static_cast<Card>(m_weapon + static_cast<int>(CardCategory::Weapon));
+		suggestion.room = static_cast<Card>(m_room + static_cast<int>(CardCategory::Room));
 
-	std::vector<std::string> player_suggestion_responding_card_dropdown_entries { "Unknown" };
-	for (auto category : Cluedo::CardUtils::card_categories)
-		player_suggestion_responding_card_dropdown_entries.push_back(fmt::to_string(category));
+		if (m_responding_player == 0)
+			return suggestion;
 
-	int player_suggestion_responding_card = 0;
-	auto player_suggestion_responding_card_dropdown = ftxui::Maybe(ftxui::Dropdown(&player_suggestion_responding_card_dropdown_entries, &player_suggestion_responding_card), [&]() {
-		return player_suggestion_responding_player != 0;
-	});
+		suggestion.responding_player_index = static_cast<std::size_t>(m_responding_player - 1);
+		if (suggestion.suggesting_player_index == suggestion.responding_player_index)
+			return Error::SuggestingPlayerEqualToRespondingPlayer;
 
-	auto player_suggestion_container = ftxui::Container::Vertical({ ftxui::Container::Horizontal({ player_suggestion_suggesting_player_dropdown,
-	                                                                                               player_suggestion_suspect_dropdown,
-	                                                                                               player_suggestion_weapon_dropdown,
-	                                                                                               player_suggestion_room_dropdown }),
-	                                                                ftxui::Container::Horizontal({ player_suggestion_responding_player_dropdown,
-	                                                                                               player_suggestion_responding_card_dropdown }) });
+		if (m_responding_card != 0) {
+			auto card_category = static_cast<CardCategory>(m_responding_card - 1);
 
-	auto player_suggestion_container_renderer = ftxui::Renderer(player_suggestion_container, [&]() {
-		return ftxui::vbox(
-		  ftxui::hbox(
-		    player_suggestion_suggesting_player_dropdown->Render(),
-		    ftxui::text("suggested") | ftxui::center,
-		    player_suggestion_suspect_dropdown->Render(),
-		    player_suggestion_weapon_dropdown->Render(),
-		    player_suggestion_room_dropdown->Render()
-		  ),
-		  ftxui::hbox(
-		    player_suggestion_responding_player_dropdown->Render(),
-		    player_response_text->Render(),
-		    player_suggestion_responding_card_dropdown->Render()
-		  )
-		);
-	});
-
-	std::vector<std::string> new_information_tab_names { "Player has/hasn't got card", "Player made a suggestion" };
-	int new_information_selected_tab = 0;
-	auto new_information_tab_menu = ftxui::Menu(&new_information_tab_names, &new_information_selected_tab);
-
-	auto new_information_tab_container = ftxui::Container::Tab({ player_card_state_container_renderer, player_suggestion_container_renderer }, &new_information_selected_tab);
-
-	auto learn_button = ftxui::Button("Learn", [&]() {
-		if (new_information_selected_tab == 0) {
-			auto player_index = static_cast<std::size_t>(player_card_state_player);
-			auto card = static_cast<Cluedo::Card>(player_card_state_card);
-			solver.learn_player_card_state(player_index, card, player_card_state_has_card);
-			information_history.push_back(fmt::format("{} {} {}", solver.player(player_index).name(), player_card_state_has_card ? "has got" : "hasn't got", card));
-		} else {
-			Cluedo::Solver::Suggestion suggestion;
-
-			suggestion.suggesting_player_index = static_cast<std::size_t>(player_suggestion_suggesting_player);
-			if (player_suggestion_responding_player != 0)
-				suggestion.responding_player_index = static_cast<std::size_t>(player_suggestion_responding_player - 1);
-			suggestion.suspect = static_cast<Cluedo::Card>(static_cast<int>(Cluedo::CardCategory::Suspect) + player_suggestion_suspect);
-			suggestion.weapon = static_cast<Cluedo::Card>(static_cast<int>(Cluedo::CardCategory::Weapon) + player_suggestion_weapon);
-			suggestion.room = static_cast<Cluedo::Card>(static_cast<int>(Cluedo::CardCategory::Room) + player_suggestion_room);
-			switch (player_suggestion_responding_card) {
-			case 1:
+			switch (card_category) {
+			case CardCategory::Suspect:
 				suggestion.response_card = suggestion.suspect;
 				break;
-			case 2:
+			case CardCategory::Weapon:
 				suggestion.response_card = suggestion.weapon;
 				break;
-			case 3:
+			case CardCategory::Room:
 				suggestion.response_card = suggestion.room;
 				break;
-			default:
+			}
+		}
+
+		return suggestion;
+	}
+
+	ftxui::Element Render() override {
+		return ftxui::vbox(
+		  ftxui::hbox(
+		    m_suggesting_player_dropdown->Render(),
+		    ftxui::text("suggested") | ftxui::borderEmpty,
+		    m_suspect_dropdown->Render(),
+		    m_weapon_dropdown->Render(),
+		    m_room_dropdown->Render()
+		  ),
+		  ftxui::hbox(
+		    m_responding_player_dropdown->Render(),
+		    (m_responding_player != 0 ? ftxui::text("responded with") : ftxui::text("responded")) | ftxui::borderEmpty,
+		    m_responding_card_dropdown->Render()
+		  )
+		);
+	}
+
+private:
+	int m_suggesting_player;
+	int m_suspect;
+	int m_weapon;
+	int m_room;
+	int m_responding_player;
+	int m_responding_card;
+
+	ftxui::Component m_suggesting_player_dropdown;
+	ftxui::Component m_suspect_dropdown;
+	ftxui::Component m_weapon_dropdown;
+	ftxui::Component m_room_dropdown;
+	ftxui::Component m_responding_player_dropdown;
+	ftxui::Component m_responding_card_dropdown;
+};
+
+std::shared_ptr<LearnFromSuggestionTabBase> LearnFromSuggestionTab(ComponentData& data) { return ftxui::Make<LearnFromSuggestionTabBase>(data); }
+
+class PlayersAndHistoryWindowBase : public ftxui::ComponentBase {
+public:
+	PlayersAndHistoryWindowBase(ComponentData& data) {
+		m_players_list = ftxui::Renderer([&]() {
+			ftxui::Elements elements;
+			for (std::size_t i = 0; i < data.solver.n_players(); ++i)
+				elements.push_back(ftxui::text(fmt::format("{} - {} cards", data.solver.player(i).name(), data.solver.player(i).n_cards())));
+			return ftxui::vbox(elements);
+		});
+
+		m_information_history_scroller = ftxui::Scroller(ftxui::Renderer([&]() {
+			ftxui::Elements elements;
+			for (auto const& turn : m_information_history)
+				elements.push_back(ftxui::text(turn));
+			return ftxui::vbox(elements);
+		}));
+
+		Add(m_information_history_scroller);
+	}
+
+	void add_information(std::string const& turn) { m_information_history.insert(m_information_history.begin(), turn); }
+
+	ftxui::Element Render() override {
+		return ftxui::hbox(
+		  ftxui::window(
+		    ftxui::text(" Players "),
+		    m_players_list->Render()
+		  ),
+		  ftxui::window(
+		    ftxui::text(" Information history "),
+		    m_information_history_scroller->Render() | ftxui::xflex | ftxui::size(ftxui::HEIGHT, ftxui::LESS_THAN, MAX_SCROLLER_HEIGHT)
+		  )
+		);
+	}
+
+private:
+	static constexpr int MAX_SCROLLER_HEIGHT = 10;
+
+	std::vector<std::string> m_information_history;
+
+	ftxui::Component m_players_list;
+	ftxui::Component m_information_history_scroller;
+};
+
+std::shared_ptr<PlayersAndHistoryWindowBase> PlayersAndHistoryWindow(ComponentData& data) { return ftxui::Make<PlayersAndHistoryWindowBase>(data); }
+
+class NewInformationWindowBase : public ftxui::ComponentBase {
+public:
+	NewInformationWindowBase(ComponentData& data, std::function<void(std::string const&)> on_learn)
+	  : m_tab_names({ "Player has/hasn't got card", "Player made a suggestion" })
+	  , m_selected_tab(0)
+	  , m_on_learn(on_learn) {
+		m_learn_player_card_state_tab = LearnPlayerCardStateTab(data);
+		m_learn_from_suggestion_tab = LearnFromSuggestionTab(data);
+
+		m_tab_toggle = ftxui::Toggle(&m_tab_names, &m_selected_tab);
+		m_tab_container = ftxui::Container::Tab({ m_learn_player_card_state_tab, m_learn_from_suggestion_tab }, &m_selected_tab);
+
+		m_learn_button = ftxui::Button(
+		  "Learn", [&]() {
+			  auto result = learn(data.solver);
+			  if (result)
+				  m_on_learn(*result);
+		  },
+		  ftxui::ButtonOption::Border()
+		);
+
+		m_maybe_error_component = ftxui::Maybe(ftxui::Renderer([&]() {
+			                                       return ftxui::text(fmt::format("ERROR: {}", *m_maybe_error)) | ftxui::color(ftxui::Color::Red);
+		                                       }),
+		                                       [&]() { return m_maybe_error.has_value(); });
+
+		Add(ftxui::Container::Vertical({ m_tab_toggle, m_tab_container, m_learn_button, m_maybe_error_component }));
+	}
+
+	std::optional<std::string> learn(Solver& solver) {
+		switch (m_selected_tab) {
+		case 0:
+			{
+				auto player_index = m_learn_player_card_state_tab->player();
+				auto card = m_learn_player_card_state_tab->card();
+				auto has_card = m_learn_player_card_state_tab->has_card();
+				solver.learn_player_card_state(player_index, card, has_card);
+				return fmt::format("{} {} {}", solver.player(player_index).name(), has_card ? "has got" : "hasn't got", card);
 				break;
 			}
-			solver.learn_from_suggestion(suggestion);
+		case 1:
+			{
+				auto suggestion_or_error = m_learn_from_suggestion_tab->suggestion();
+				if (suggestion_or_error.is_error()) {
+					m_maybe_error = suggestion_or_error.release_error();
+					return {};
+				}
 
-			std::string response;
-			if (!suggestion.responding_player_index)
-				response = "No one responded!";
-			else if (!suggestion.response_card)
-				response = fmt::format("{} responded", solver.player(*suggestion.responding_player_index).name());
-			else
-				response = fmt::format("{} responded with {}", solver.player(*suggestion.responding_player_index).name(), *suggestion.response_card);
+				m_maybe_error.reset();
 
-			information_history.insert(information_history.begin(), fmt::format("{} suggested {}, {}, {} - {}", solver.player(suggestion.suggesting_player_index).name(), suggestion.suspect, suggestion.weapon, suggestion.room, response));
+				auto suggestion = suggestion_or_error.release_value();
+				solver.learn_from_suggestion(suggestion);
+
+				std::string response;
+				if (!suggestion.responding_player_index)
+					response = "No one responded!";
+				else if (!suggestion.response_card)
+					response = fmt::format("{} responded", solver.player(*suggestion.responding_player_index).name());
+				else
+					response = fmt::format("{} responded with {}", solver.player(*suggestion.responding_player_index).name(), *suggestion.response_card);
+
+				return fmt::format("{} suggested {}, {}, {} - {}", solver.player(suggestion.suggesting_player_index).name(), suggestion.suspect, suggestion.weapon, suggestion.room, response);
+				break;
+			}
 		}
-	});
 
-	auto new_information_container = ftxui::Container::Horizontal({ new_information_tab_menu, new_information_tab_container, learn_button });
+		return {};
+	}
 
-	auto new_information_container_renderer = ftxui::Renderer(new_information_container, [&]() {
-		return ftxui::hbox(
-		  new_information_tab_menu->Render(),
-		  ftxui::separator(),
-		  new_information_tab_container->Render(),
-		  ftxui::separator(),
-		  ftxui::vbox(learn_button->Render())
+	int selected_tab() const { return m_selected_tab; }
+	std::shared_ptr<LearnPlayerCardStateTabBase> learn_player_card_state_tab() const { return m_learn_player_card_state_tab; }
+	std::shared_ptr<LearnFromSuggestionTabBase> learn_from_suggestion_tab() const { return m_learn_from_suggestion_tab; }
+
+	ftxui::Element Render() override {
+		return ftxui::window(
+		  ftxui::text(" New information "),
+		  ftxui::vbox(
+		    m_tab_toggle->Render(),
+		    ftxui::separator(),
+		    m_tab_container->Render(),
+		    ftxui::hbox(m_learn_button->Render()),
+		    m_maybe_error_component->Render()
+		  )
 		);
-	});
+	}
 
+private:
+	std::vector<std::string> m_tab_names;
+	int m_selected_tab;
+	std::function<void(std::string const&)> m_on_learn;
+	std::optional<Error> m_maybe_error;
+
+	std::shared_ptr<LearnPlayerCardStateTabBase> m_learn_player_card_state_tab;
+	std::shared_ptr<LearnFromSuggestionTabBase> m_learn_from_suggestion_tab;
+	ftxui::Component m_tab_toggle;
+	ftxui::Component m_tab_container;
+	ftxui::Component m_learn_button;
+	ftxui::Component m_maybe_error_component;
+};
+
+std::shared_ptr<NewInformationWindowBase> NewInformationWindow(ComponentData& data, std::function<void(std::string const&)> on_learn) { return ftxui::Make<NewInformationWindowBase>(data, on_learn); }
+
+class GameWindowBase : public ftxui::ComponentBase {
+public:
+	GameWindowBase(ComponentData& data, std::function<void()> on_end) {
+		m_end_game_button = ftxui::Button("End game", on_end, ftxui::ButtonOption::Border());
+
+		m_players_and_history_window = PlayersAndHistoryWindow(data);
+		m_new_information_window = NewInformationWindow(data, [&](std::string const& turn) { m_players_and_history_window->add_information(turn); });
+
+		Add(ftxui::Container::Vertical({ m_players_and_history_window, m_new_information_window, m_end_game_button }));
+	}
+
+	ftxui::Element Render() override {
+		return ftxui::window(
+		  ftxui::text(" Game "),
+		  ftxui::vbox(
+		    m_players_and_history_window->Render(),
+		    m_new_information_window->Render(),
+		    m_end_game_button->Render()
+		  )
+		);
+	}
+
+private:
+	std::shared_ptr<PlayersAndHistoryWindowBase> m_players_and_history_window;
+	std::shared_ptr<NewInformationWindowBase> m_new_information_window;
+	ftxui::Component m_end_game_button;
+};
+
+std::shared_ptr<GameWindowBase> GameWindow(ComponentData& data, std::function<void()> on_end) { return ftxui::Make<GameWindowBase>(data, on_end); }
+
+class SolutionsWindowBase : public ftxui::ComponentBase {
+public:
+	SolutionsWindowBase(ComponentData& data) {
+		m_solutions_scroller = ftxui::Scroller(ftxui::Renderer([&] {
+			ftxui::Elements solutions;
+			for (auto const& [solution, probability] : m_solutions) {
+				auto const& [suspect, weapon, room] = solution;
+				solutions.push_back(ftxui::hbox(
+				  ftxui::text(fmt::format("{} {} {}", suspect, weapon, room)),
+				  ftxui::filler(),
+				  ftxui::text(fmt::format("{:3.2f} %", probability * 100))
+				));
+			}
+			return ftxui::vbox(solutions) | ftxui::yflex;
+		}));
+
+		m_refresh_button = ftxui::Button(
+		  "Refresh", [&]() {
+			  m_solutions = data.solver.find_most_likely_solutions();
+		  },
+		  ftxui::ButtonOption::Ascii()
+		);
+
+		Add(ftxui::Container::Vertical({ m_refresh_button, m_solutions_scroller }));
+	}
+
+	ftxui::Element Render() override {
+		return ftxui::window(
+		  ftxui::hbox(ftxui::text(" Solutions "), m_refresh_button->Render(), ftxui::text(" ")),
+		  m_solutions_scroller->Render() | ftxui::yflex
+		);
+	}
+
+private:
+	std::vector<Solver::SolutionProbabilityPair> m_solutions;
+
+	ftxui::Component m_solutions_scroller;
+	ftxui::Component m_refresh_button;
+};
+
+std::shared_ptr<SolutionsWindowBase> SolutionsWindow(ComponentData& data) { return ftxui::Make<SolutionsWindowBase>(data); }
+
+void main() {
+	ComponentData component_data { create_solver() };
 	auto screen = ftxui::ScreenInteractive::Fullscreen();
 
-	auto end_game_button = ftxui::Button("End game", [&]() {
+	auto game_window = GameWindow(component_data, [&]() {
 		screen.ExitLoopClosure()();
 	});
 
-	auto information_history_scroller = ftxui::Scroller(ftxui::Renderer([&] {
-		ftxui::Elements turns;
-		for (auto const& turn : information_history) {
-			turns.push_back(ftxui::text(turn));
-		}
-		return ftxui::vbox(turns);
-	}));
+	auto solutions_window = SolutionsWindow(component_data);
+	auto container = ftxui::Container::Vertical({ game_window, solutions_window });
 
-	auto game_container = ftxui::Container::Vertical({ information_history_scroller, new_information_container_renderer, end_game_button });
-
-	auto game_container_renderer = ftxui::Renderer(game_container, [&]() {
-		ftxui::Elements players_data_container;
-		for (std::size_t i = 0; i < solver.n_players(); ++i) {
-			players_data_container.push_back(ftxui::text(fmt::format("{} - {} cards", solver.player(i).name(), solver.player(i).n_cards())));
-		}
-
-		return ftxui::vbox(
-		  ftxui::hbox(
-		    ftxui::window(
-		      ftxui::text(" Players "),
-		      ftxui::vbox(players_data_container)
-		    ),
-		    ftxui::window(
-		      ftxui::text(" Information history "),
-		      information_history_scroller->Render() | ftxui::xflex | ftxui::size(ftxui::HEIGHT, ftxui::LESS_THAN, 10)
-		    )
-		  ),
-		  ftxui::window(
-		    ftxui::text(" New information "),
-		    new_information_container_renderer->Render()
-		  ),
-		  end_game_button->Render()
-		);
-	});
-
-	auto refresh_solutions_button = ftxui::Button(
-	  "Refresh", [&]() {
-		  most_likely_solutions = solver.find_most_likely_solutions();
-	  },
-	  ftxui::ButtonOption::Ascii()
-	);
-
-	auto solutions_scroller = ftxui::Scroller(ftxui::Renderer([&] {
-		ftxui::Elements solutions;
-		for (auto const& [solution, probability] : most_likely_solutions) {
-			auto const& [suspect, weapon, room] = solution;
-			solutions.push_back(ftxui::hbox(
-			  ftxui::text(fmt::format("{} {} {}", suspect, weapon, room)),
-			  ftxui::filler(),
-			  ftxui::text(fmt::format("{:3.2f} %", probability * 100))
-			));
-		}
-		return ftxui::vbox(solutions) | ftxui::yflex;
-	}));
-
-	auto container = ftxui::Container::Vertical({ game_container_renderer, refresh_solutions_button, solutions_scroller });
-
-	auto renderer = ftxui::Renderer(container, [&]() {
-		return ftxui::vbox(
-		  ftxui::window(
-		    ftxui::text(" Game "),
-		    game_container_renderer->Render()
-		  ),
-		  ftxui::window(
-		    ftxui::hbox(ftxui::text(" Solutions "), refresh_solutions_button->Render(), ftxui::text(" ")),
-		    solutions_scroller->Render() | ftxui::yflex
-		  )
-		);
-	});
-
-	screen.Loop(renderer);
+	screen.Loop(container);
 }
 
 };

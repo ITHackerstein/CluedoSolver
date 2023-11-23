@@ -6,7 +6,8 @@ namespace Cluedo {
 
 enum class Error {
 	InvalidNumberOfPlayers,
-	InvalidNumberOfCards
+	InvalidNumberOfCards,
+	SuggestingPlayerEqualToRespondingPlayer
 };
 
 std::string_view format_as(Error error);
