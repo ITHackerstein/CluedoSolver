@@ -3,6 +3,7 @@
 #include <fmt/format.h>
 #include <ftxui/component/event.hpp>
 #include <ftxui/component/screen_interactive.hpp>
+#include <optional>
 
 namespace ftxui {
 
@@ -61,6 +62,58 @@ namespace Cluedo {
 
 namespace UI {
 
+template<typename ValueType>
+ftxui::Component NumberInput(ValueType& value, std::optional<ValueType> minimum, std::optional<ValueType> maximum, std::optional<std::function<void()>> on_change) {
+	class Impl : public ftxui::ComponentBase {
+	public:
+		Impl(ValueType& value, std::optional<ValueType> minimum, std::optional<ValueType> maximum, std::optional<std::function<void()>> on_change)
+		  : m_value(value), m_minimum(minimum), m_maximum(maximum), m_on_change(on_change) {
+			m_decrease_button = ftxui::Button(
+			  "-", [&]() {
+				  if (!m_minimum || m_value > *m_minimum) {
+					  --m_value;
+					  if (m_on_change)
+						  (*m_on_change)();
+				  }
+			  },
+			  ftxui::ButtonOption::Ascii()
+			);
+
+			m_increase_button = ftxui::Button(
+			  "+", [&]() {
+				  if (!m_maximum || m_value < *m_maximum) {
+					  ++m_value;
+					  if (m_on_change)
+						  (*m_on_change)();
+				  }
+			  },
+			  ftxui::ButtonOption::Ascii()
+			);
+
+			Add(ftxui::Container::Horizontal({ m_decrease_button, m_increase_button }));
+		}
+
+		ftxui::Element Render() override {
+			return ftxui::hbox(
+			  m_decrease_button->Render(),
+			  ftxui::text(fmt::format(" {} ", m_value)),
+			  m_increase_button->Render()
+			);
+		}
+
+	private:
+		ValueType& m_value;
+		std::optional<ValueType> m_minimum;
+		std::optional<ValueType> m_maximum;
+		std::optional<std::function<void()>> m_on_change;
+
+		ftxui::Component m_decrease_button;
+		ftxui::Component m_increase_button;
+	};
+
+	return ftxui::Make<Impl>(value, minimum, maximum, on_change);
+}
+
 Solver create_solver() {
 	std::size_t player_count = Cluedo::Solver::MAX_PLAYER_COUNT;
 	std::vector<Cluedo::PlayerData> players_data;
@@ -68,12 +121,13 @@ Solver create_solver() {
 	std::optional<Cluedo::Error> maybe_error;
 	std::optional<Cluedo::Solver> maybe_solver;
 
-	auto distribute_cards_automatically = [&]() {
+	auto reset_player_data = [&]() {
 		auto available_cards = Cluedo::CardUtils::CARD_COUNT - Cluedo::Solver::SOLUTION_CARD_COUNT;
 		auto cards_per_player = available_cards / player_count;
 		auto remaining_cards = available_cards % player_count;
 
 		for (std::size_t i = 0; i < player_count; ++i) {
+			players_data.at(i).name.clear();
 			players_data.at(i).n_cards = cards_per_player;
 			if (remaining_cards > 0) {
 				++players_data.at(i).n_cards;
@@ -82,49 +136,30 @@ Solver create_solver() {
 		}
 	};
 
-	distribute_cards_automatically();
+	reset_player_data();
 
 	auto screen = ftxui::ScreenInteractive::Fullscreen();
 
-	auto decrease_player_count_button = ftxui::Button(
-	  "-", [&]() {
-		  if (player_count > Cluedo::Solver::MIN_PLAYER_COUNT) {
-			  --player_count;
-			  distribute_cards_automatically();
-		  }
-	  },
-	  ftxui::ButtonOption::Ascii()
-	);
+	auto player_count_number_input = NumberInput(player_count, std::make_optional(Cluedo::Solver::MIN_PLAYER_COUNT), std::make_optional(Cluedo::Solver::MAX_PLAYER_COUNT), reset_player_data) | ftxui::Renderer([](ftxui::Element inner) { return ftxui::hbox(ftxui::text("Number of players: "), inner); });
 
-	auto increase_player_count_button = ftxui::Button(
-	  "+", [&]() {
-		  if (player_count < Cluedo::Solver::MAX_PLAYER_COUNT) {
-			  ++player_count;
-			  distribute_cards_automatically();
-		  }
-	  },
-	  ftxui::ButtonOption::Ascii()
-	);
-
-	ftxui::Components players_data_form;
+	ftxui::Components player_data_components;
 	for (std::size_t i = 0; i < player_count; ++i) {
-		auto decrease_card_count_button = ftxui::Button(
-		  "-", [i, &players_data]() {
-			  if (players_data.at(i).n_cards > 1)
-				  --players_data.at(i).n_cards;
-		  },
-		  ftxui::ButtonOption::Ascii()
-		);
+		auto player_name_input = ftxui::Input(&players_data.at(i).name, "Name...");
+		auto card_number_input = NumberInput(players_data.at(i).n_cards, std::make_optional(static_cast<std::size_t>(1)));
+		auto player_data_container = ftxui::Container::Horizontal({ player_name_input, card_number_input }) | ftxui::Renderer([i, player_name_input, card_number_input](ftxui::Element) {
+			                             return ftxui::hbox(
+			                               ftxui::text(fmt::format("Player {} ", i + 1)),
+			                               player_name_input->Render(),
+			                               ftxui::separator(),
+			                               card_number_input->Render(),
+			                               ftxui::text(" cards")
+			                             );
+		                             });
 
-		auto increase_card_count_button = ftxui::Button(
-		  "+", [i, &players_data]() { ++players_data.at(i).n_cards; }, ftxui::ButtonOption::Ascii()
-		);
-
-		auto component = ftxui::Container::Horizontal({ ftxui::Maybe(ftxui::Input(&players_data.at(i).name, "Name..."), [i, &player_count]() { return i < player_count; }),
-		                                                decrease_card_count_button, increase_card_count_button });
-
-		players_data_form.push_back(component);
+		player_data_components.push_back(ftxui::Maybe(player_data_container, [i, &player_count]() { return i < player_count; }));
 	}
+
+	auto players_data_container = ftxui::Container::Vertical(player_data_components);
 
 	auto submit_button = ftxui::Button(
 	  "Start game", [&]() {
@@ -140,35 +175,19 @@ Solver create_solver() {
 	  ftxui::ButtonOption::Border()
 	);
 
-	auto container = ftxui::Container::Vertical({ ftxui::Container::Horizontal({ decrease_player_count_button, increase_player_count_button }),
-	                                              ftxui::Container::Vertical(players_data_form),
+	auto container = ftxui::Container::Vertical({ player_count_number_input,
+	                                              players_data_container,
 	                                              submit_button });
 
 	auto renderer = ftxui::Renderer(container, [&]() {
-		ftxui::Elements players_data_form_elements;
-		for (std::size_t i = 0; i < player_count; ++i) {
-			auto name_input = players_data_form.at(i)->ChildAt(0);
-			auto decrease_card_count_button = players_data_form.at(i)->ChildAt(1);
-			auto increase_card_count_button = players_data_form.at(i)->ChildAt(2);
-
-			players_data_form_elements.push_back(ftxui::hbox(
-			  ftxui::text(fmt::format("Player {}: ", i + 1)),
-			  name_input->Render(),
-			  ftxui::separator(),
-			  ftxui::text(fmt::format("{} cards ", players_data.at(i).n_cards)),
-			  decrease_card_count_button->Render(),
-			  increase_card_count_button->Render()
-			));
-		}
-
 		auto error_text = maybe_error ? ftxui::text(fmt::format("ERROR: {}", *maybe_error)) | ftxui::xflex | ftxui::color(ftxui::Color::Red) : ftxui::emptyElement();
 
 		return ftxui::window(
 		  ftxui::text(" Game data "),
 		  ftxui::vbox(
-		    ftxui::hbox(ftxui::text(fmt::format("Number of players: {}", player_count)), decrease_player_count_button->Render(), increase_player_count_button->Render()),
+		    player_count_number_input->Render(),
 		    ftxui::separator(),
-		    players_data_form_elements,
+		    players_data_container->Render(),
 		    ftxui::separator(),
 		    submit_button->Render(),
 		    error_text

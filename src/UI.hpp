@@ -27,6 +27,9 @@ namespace Cluedo {
 
 namespace UI {
 
+template<typename ValueType>
+ftxui::Component NumberInput(ValueType& value, std::optional<ValueType> minimum = {}, std::optional<ValueType> maximum = {}, std::optional<std::function<void()>> on_change = {});
+
 Solver create_solver();
 void main();
 
