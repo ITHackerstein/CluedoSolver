@@ -31,7 +31,7 @@ std::string_view format_as(CardCategory);
 	_ENUMERATE_CARD(Wrench)
 
 #define _ENUMERATE_ROOMS       \
-	_ENUMERATE_CARD(BallardRoom) \
+	_ENUMERATE_CARD(BilliardRoom) \
 	_ENUMERATE_CARD(Ballroom)    \
 	_ENUMERATE_CARD(DiningRoom)  \
 	_ENUMERATE_CARD(Greenhouse)  \

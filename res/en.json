@@ -1,0 +1,65 @@
+{
+	"Error": {
+		"InvalidNumberOfPlayers": "invalid number of players",
+		"InvalidNumberOfCards": "invalid number of cards",
+		"SuggestingPlayerEqualToRespondingPlayer": "suggesting player is equal to responding player"
+	},
+	"CardCategory": {
+		"Suspect": "Suspect",
+		"Weapon": "Weapon",
+		"Room": "Room"
+	},
+	"Card": {
+		"Green": "Reverend Green",
+		"Mustard": "Colonel Mustard",
+		"Orchid": "Doctor Orchid",
+		"Peacock": "Miss Peacock",
+		"Plum": "Professor Plum",
+		"Scarlet": "Miss Scarlett",
+		"Candlestick": "Candlestick",
+		"Knife": "Knife",
+		"Pipe": "Pipe",
+		"Pistol": "Pistol",
+		"Rope": "Rope",
+		"Wrench": "Wrench",
+		"BilliardRoom": "Billiard room",
+		"Ballroom": "Ballroom",
+		"DiningRoom": "Dining room",
+		"Greenhouse": "Greenhouse",
+		"Hall": "Hall",
+		"Kitchen": "Kitchen",
+		"Library": "Library",
+		"Lounge": "Lounge",
+		"Study": "Study"
+	},
+	"Solver": {
+		"Player": "Player"
+	},
+	"UI": {
+		"ErrorPrefix": "ERROR",
+		"NumberOfPlayers": "Number of players",
+		"NamePlaceholder": "Name",
+		"Cards": "cards",
+		"StartGame": "Start game",
+		"GameData": "Game data",
+		"NoOne": "No one",
+		"Unknown": "Unknown",
+		"HasCard": "has card",
+		"Suggested": "suggested",
+		"RespondedWith": "responded with",
+		"Responded": "responded",
+		"Players": "Players",
+		"InformationHistory": "Information history",
+		"PlayerHasHasntGotCard": "Player has/hasn't got card",
+		"PlayerMadeASuggestion": "Player made a suggestion",
+		"Learn": "Learn",
+		"HasGot": "has got",
+		"HasntGot": "hasn't got",
+		"NoOneResponded": "No one responded",
+		"NewInformation": "New information",
+		"EndGame": "End game",
+		"Game": "Game",
+		"Refresh": "Refresh",
+		"Solutions": "Solutions"
+	}
+}

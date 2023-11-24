@@ -1,5 +1,6 @@
 #include "Error.hpp"
 #include "Solver.hpp"
+#include "Strings.hpp"
 #include "UI.hpp"
 #include "Utils/Result.hpp"
 
@@ -16,7 +17,15 @@
 #include <string_view>
 #include <vector>
 
-Result<void, Cluedo::Error> my_main([[maybe_unused]] std::vector<std::string_view>&& arguments) {
+Result<void, std::string> my_main([[maybe_unused]] std::vector<std::string_view>&& arguments) {
+	using namespace std::literals;
+
+	auto file_name = "res/en.json"sv;
+	if (arguments.size() > 0)
+		file_name = arguments.at(0);
+
+	TRY(Cluedo::Strings::load_from_file(file_name));
+
 	Cluedo::UI::main();
 
 	return {};
@@ -25,7 +34,7 @@ Result<void, Cluedo::Error> my_main([[maybe_unused]] std::vector<std::string_vie
 int main(int argc, char** argv) {
 	std::vector<std::string_view> arguments;
 	for (int i = 1; i < argc; ++i)
-		arguments.emplace_back(argv[i + 1], std::strlen(argv[i + 1]));
+		arguments.emplace_back(argv[i], std::strlen(argv[i]));
 
 	auto maybe_error = my_main(std::move(arguments));
 	if (!maybe_error.is_error())

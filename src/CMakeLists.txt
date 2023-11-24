@@ -20,11 +20,19 @@ if(NOT ftxui_POPULATED)
 	add_subdirectory(${ftxui_SOURCE_DIR} ${ftxui_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
+FetchContent_Declare(
+	json
+	URL https://github.com/nlohmann/json/releases/download/v3.11.2/json.tar.xz
+)
+
+FetchContent_MakeAvailable(json)
+
 add_executable(Cluedo
 	Card.cpp
 	Error.cpp
 	Player.cpp
 	Solver.cpp
+	Strings.cpp
 	UI.cpp
 	main.cpp
 )
@@ -53,4 +61,5 @@ target_link_libraries(Cluedo
 	PRIVATE ftxui::screen
 	PRIVATE ftxui::dom
 	PRIVATE ftxui::component
+	PRIVATE nlohmann_json::nlohmann_json
 )

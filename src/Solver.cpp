@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "Strings.hpp"
+
 namespace Cluedo {
 
 Result<Solver, Error> Solver::create(std::vector<PlayerData> const& players_data) {
@@ -21,7 +23,7 @@ Result<Solver, Error> Solver::create(std::vector<PlayerData> const& players_data
 
 	std::vector<Player> players;
 	for (std::size_t i = 0; i < players_data.size(); ++i) {
-		auto name = !players_data.at(i).name.empty() ? players_data.at(i).name : fmt::format("Player {}", i + 1);
+		auto name = !players_data.at(i).name.empty() ? players_data.at(i).name : fmt::format("{} {}", Cluedo::Strings::the().get_string("Solver.Player"), i + 1);
 		players.emplace_back(name, players_data.at(i).n_cards);
 	}
 	players.emplace_back("", SOLUTION_CARD_COUNT);
