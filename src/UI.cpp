@@ -128,7 +128,6 @@ ftxui::Component NumberInput(std::size_t& value, std::optional<std::size_t> mini
 }
 
 Solver create_solver() {
-
 	auto player_count = Solver::MAX_PLAYER_COUNT;
 	std::vector<PlayerData> players_data;
 	players_data.resize(Solver::MAX_PLAYER_COUNT);
@@ -178,7 +177,9 @@ Solver create_solver() {
 	auto submit_button = ftxui::Button(
 	  std::string { Strings::the().get_string("UI.StartGame"sv) },
 	  [&]() {
-		  auto result = Solver::create(players_data);
+		  auto players_data_copy = players_data;
+		  players_data_copy.resize(player_count);
+		  auto result = Solver::create(players_data_copy);
 		  if (result.is_error()) {
 			  maybe_error = result.release_error();
 			  return;
