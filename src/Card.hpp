@@ -30,15 +30,15 @@ std::string_view format_as(CardCategory);
 	_ENUMERATE_CARD(Rope)        \
 	_ENUMERATE_CARD(Wrench)
 
-#define _ENUMERATE_ROOMS       \
+#define _ENUMERATE_ROOMS        \
 	_ENUMERATE_CARD(BilliardRoom) \
-	_ENUMERATE_CARD(Ballroom)    \
-	_ENUMERATE_CARD(DiningRoom)  \
-	_ENUMERATE_CARD(Greenhouse)  \
-	_ENUMERATE_CARD(Hall)        \
-	_ENUMERATE_CARD(Kitchen)     \
-	_ENUMERATE_CARD(Library)     \
-	_ENUMERATE_CARD(Lounge)      \
+	_ENUMERATE_CARD(Ballroom)     \
+	_ENUMERATE_CARD(DiningRoom)   \
+	_ENUMERATE_CARD(Greenhouse)   \
+	_ENUMERATE_CARD(Hall)         \
+	_ENUMERATE_CARD(Kitchen)      \
+	_ENUMERATE_CARD(Library)      \
+	_ENUMERATE_CARD(Lounge)       \
 	_ENUMERATE_CARD(Study)
 
 #define _ENUMERATE_CARDS \
@@ -93,23 +93,21 @@ struct CardUtils {
 		explicit constexpr cards_per_category(CardCategory c)
 		  : category(c) {}
 
-		constexpr CardIterator begin() const { return static_cast<std::uint8_t>(category); }
-		constexpr CardIterator end() const {
-			std::uint8_t count = 0;
+		constexpr std::uint8_t count() const {
 			switch (category) {
 			case CardCategory::Suspect:
-				count = 6;
-				break;
+				return 6;
 			case CardCategory::Weapon:
-				count = 6;
-				break;
+				return 6;
 			case CardCategory::Room:
-				count = 9;
-				break;
+				return 9;
 			}
 
-			return static_cast<std::uint8_t>(category) + count;
+			return 0;
 		}
+
+		constexpr CardIterator begin() const { return static_cast<std::uint8_t>(category); }
+		constexpr CardIterator end() const { return static_cast<std::uint8_t>(category) + count(); }
 	};
 };
 
