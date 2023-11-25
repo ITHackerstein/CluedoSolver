@@ -343,7 +343,7 @@ public:
 	}
 
 	ftxui::Element Render() override {
-		std::string response_text { Strings::the().get_string(m_responding_card != 0 ? "UI.RespondedWith"sv : "UI.Responded"sv) };
+		std::string response_text { Strings::the().get_string(m_responding_player != 0 ? "UI.RespondedWith"sv : "UI.Responded"sv) };
 
 		return ftxui::vbox(
 		  ftxui::hbox(
@@ -439,7 +439,7 @@ public:
 
 		m_learn_button = ftxui::Button(
 		  std::string { Strings::the().get_string("UI.Learn"sv) },
-			[&]() {
+		  [&]() {
 			  auto result = learn(data.solver);
 			  if (result)
 				  m_on_learn(*result);
