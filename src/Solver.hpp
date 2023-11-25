@@ -43,7 +43,7 @@ public:
 	std::vector<SolutionProbabilityPair> find_most_likely_solutions() const;
 
 private:
-	static constexpr std::size_t MAX_ITERATIONS = 200000;
+	static constexpr std::size_t MAX_ITERATIONS = 1'000'000;
 
 	explicit Solver(std::vector<Player>&& players)
 	  : m_players(std::move(players)) {}
@@ -51,7 +51,7 @@ private:
 	std::size_t solution_player_index() const { return m_players.size() - 1; }
 
 	void infer_new_information();
-	bool assign_cards_randomly_to_players(std::vector<Card> const& cards);
+	bool assign_cards_to_players(std::vector<Card> const& cards);
 	bool are_constraints_satisfied() const;
 
 	std::vector<Player> m_players;

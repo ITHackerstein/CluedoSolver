@@ -37,6 +37,13 @@ void Solver::learn_player_card_state(std::size_t player_index, Card card, bool h
 	else
 		player(player_index).add_not_in_hand_card(card);
 
+	if (player_index == solution_player_index() && has_card) {
+		for (auto other_card : CardUtils::cards_per_category(CardUtils::card_category(card))) {
+			if (other_card != card)
+				learn_player_card_state(player_index, other_card, false, false);
+		}
+	}
+
 	if (infer_new_info)
 		infer_new_information();
 }
@@ -98,6 +105,7 @@ void Solver::infer_new_information() {
 				if (!m_players.at(other_player_index).has_card(card))
 					learn_player_card_state(other_player_index, card, false, false);
 			}
+			break;
 		}
 
 		if (!card_owned && player_who_dont_own_card_count == m_players.size() - 1) {
@@ -108,29 +116,32 @@ void Solver::infer_new_information() {
 
 	// Here we try to infer some more specific information on the solution knowing it has one card of each category.
 	for (auto card_category : CardUtils::card_categories) {
+		bool solution_has_category = false;
 		std::optional<Card> solution_card;
+
 		for (auto card : CardUtils::cards_per_category(card_category)) {
-			bool is_card_owned = std::any_of(m_players.begin(), m_players.end() - 1, [card](auto const& player) {
-				auto card_state = player.has_card(card);
-				return card_state && *card_state;
-			});
-
-			if (is_card_owned)
-				break;
-
-			if (solution_card) {
-				solution_card = {};
+			bool is_owned_by_solution = player(solution_player_index()).m_cards_in_hand.contains(card);
+			if (is_owned_by_solution) {
+				solution_has_category = true;
 				break;
 			}
 
-			solution_card = card;
+			bool is_card_owned = std::any_of(m_players.begin(), m_players.end() - 1, [card](auto const& player) { return player.m_cards_in_hand.contains(card); });
+
+			if (is_card_owned)
+				continue;
+
+			if (solution_card) {
+				solution_card.reset();
+				break;
+			} else {
+				solution_card = card;
+			}
 		}
 
-		// If we didn't find the solution card or it has already a state we skip to the next category.
-		if (!solution_card || m_players.at(solution_player_index()).has_card(*solution_card).has_value())
-			continue;
-
-		learn_player_card_state(solution_player_index(), *solution_card, true, false);
+		// If the solution doesn't have a card of this category and we found the solution card
+		if (!solution_has_category && solution_card)
+			learn_player_card_state(solution_player_index(), *solution_card, true, false);
 	}
 
 	// This loops checks if any players have some possibilities in common.
@@ -170,21 +181,21 @@ static void shuffle_cards(std::vector<Card>& cards, pcg64_fast& prng) {
 	}
 }
 
-bool Solver::assign_cards_randomly_to_players(std::vector<Card> const& cards) {
+bool Solver::assign_cards_to_players(std::vector<Card> const& cards) {
 	std::size_t next_card_to_assign_index = 0;
 	for (std::size_t player_index = 0; player_index < m_players.size() - 1; ++player_index) {
-		auto& player = m_players.at(player_index);
+		auto& p = player(player_index);
 
-		auto cards_to_assign_count = player.n_cards() - player.m_cards_in_hand.size();
+		auto cards_to_assign_count = p.n_cards() - p.m_cards_in_hand.size();
 		if (cards.size() - next_card_to_assign_index < cards_to_assign_count)
 			return false;
 
 		for (std::size_t i = 0; i < cards_to_assign_count; ++i) {
 			auto card = cards.at(next_card_to_assign_index++);
-			if (player.m_cards_not_in_hand.contains(card))
+			if (p.m_cards_not_in_hand.contains(card))
 				return false;
 
-			learn_player_card_state(player_index, card, true, false);
+			p.m_cards_in_hand.insert(card);
 		}
 	}
 
@@ -202,7 +213,7 @@ bool Solver::are_constraints_satisfied() const {
 
 		all_player_cards.set_union(player.m_cards_in_hand);
 
-		for (auto possibility : player.m_possibilities) {
+		for (auto const& possibility : player.m_possibilities) {
 			if (CardSet::intersection(possibility, player.m_cards_in_hand).empty())
 				return false;
 		}
@@ -212,8 +223,8 @@ bool Solver::are_constraints_satisfied() const {
 }
 
 std::vector<Solver::SolutionProbabilityPair> Solver::find_most_likely_solutions() const {
-	std::unordered_map<CardCategory, std::vector<Card>> possible_solution_cards;
-	for (auto const& card : m_players.at(solution_player_index()).m_cards_in_hand)
+	std::unordered_map<CardCategory, CardSet> possible_solution_cards;
+	for (auto const& card : player(solution_player_index()).m_cards_in_hand)
 		possible_solution_cards.insert({ CardUtils::card_category(card), { card } });
 
 	for (auto card_category : CardUtils::card_categories) {
@@ -222,64 +233,60 @@ std::vector<Solver::SolutionProbabilityPair> Solver::find_most_likely_solutions(
 
 		possible_solution_cards.insert({ card_category, {} });
 		for (auto card : CardUtils::cards_per_category(card_category)) {
-			if (m_players.at(solution_player_index()).m_cards_not_in_hand.contains(card))
+			if (player(solution_player_index()).m_cards_not_in_hand.contains(card))
 				continue;
 
-			possible_solution_cards.at(card_category).push_back(card);
+			possible_solution_cards.at(card_category).insert(card);
 		}
 	}
 
-	std::unordered_map<Card, std::size_t> iterations_per_card;
-	for (auto card : CardUtils::cards())
-		iterations_per_card.insert({ card, 0 });
+	auto solution_count = possible_solution_cards.at(CardCategory::Suspect).size() * possible_solution_cards.at(CardCategory::Weapon).size() * possible_solution_cards.at(CardCategory::Room).size();
+	auto max_iterations_per_solution = MAX_ITERATIONS / solution_count;
 
 	pcg_extras::seed_seq_from<std::random_device> seed_source;
 	pcg64_fast prng(seed_source);
 
-	for (std::size_t iteration = 0; iteration < MAX_ITERATIONS; ++iteration) {
-		auto suspect = possible_solution_cards.at(CardCategory::Suspect).at(prng(possible_solution_cards.at(CardCategory::Suspect).size()));
-		auto weapon = possible_solution_cards.at(CardCategory::Weapon).at(prng(possible_solution_cards.at(CardCategory::Weapon).size()));
-		auto room = possible_solution_cards.at(CardCategory::Room).at(prng(possible_solution_cards.at(CardCategory::Room).size()));
-
-		std::vector<Card> unused_cards;
-		for (auto card : CardUtils::cards()) {
-			if (card == suspect || card == weapon || card == room)
-				continue;
-
-			if (std::any_of(m_players.begin(), m_players.end() - 1, [card](auto const& player) { return player.m_cards_in_hand.contains(card); }))
-				continue;
-
-			unused_cards.push_back(card);
-		}
-
-		auto solver_copy = *this;
-		solver_copy.learn_player_card_state(solver_copy.solution_player_index(), suspect, true, false);
-		solver_copy.learn_player_card_state(solver_copy.solution_player_index(), weapon, true, false);
-		solver_copy.learn_player_card_state(solver_copy.solution_player_index(), room, true, false);
-		solver_copy.infer_new_information();
-
-		shuffle_cards(unused_cards, prng);
-
-		if (solver_copy.assign_cards_randomly_to_players(unused_cards) && solver_copy.are_constraints_satisfied()) {
-			++iterations_per_card.at(suspect);
-			++iterations_per_card.at(weapon);
-			++iterations_per_card.at(room);
-		}
-	}
-
 	std::vector<SolutionProbabilityPair> solution_probabilities;
+
 	for (auto suspect : CardUtils::cards_per_category(CardCategory::Suspect)) {
 		for (auto weapon : CardUtils::cards_per_category(CardCategory::Weapon)) {
 			for (auto room : CardUtils::cards_per_category(CardCategory::Room)) {
-				auto suspect_probability = static_cast<float>(iterations_per_card.at(suspect)) / MAX_ITERATIONS;
-				auto weapon_probability = static_cast<float>(iterations_per_card.at(weapon)) / MAX_ITERATIONS;
-				auto room_probability = static_cast<float>(iterations_per_card.at(room)) / MAX_ITERATIONS;
-				auto probability = suspect_probability * weapon_probability * room_probability;
+				if (!possible_solution_cards.at(CardCategory::Suspect).contains(suspect) || !possible_solution_cards.at(CardCategory::Weapon).contains(weapon) || !possible_solution_cards.at(CardCategory::Room).contains(room))
+					continue;
 
-				solution_probabilities.emplace_back(std::make_tuple(suspect, weapon, room), probability);
+				std::size_t valid_iterations = 0;
+				for (std::size_t iteration = 0; iteration < max_iterations_per_solution; ++iteration) {
+					auto solver_copy = *this;
+
+					solver_copy.learn_player_card_state(solver_copy.solution_player_index(), suspect, true, false);
+					solver_copy.learn_player_card_state(solver_copy.solution_player_index(), weapon, true, false);
+					solver_copy.learn_player_card_state(solver_copy.solution_player_index(), room, true, false);
+
+					std::vector<Card> unused_cards;
+					for (auto card : CardUtils::cards()) {
+						if (std::any_of(solver_copy.m_players.begin(), solver_copy.m_players.end(), [card](auto const& player) { return player.m_cards_in_hand.contains(card); }))
+							continue;
+
+						unused_cards.push_back(card);
+					}
+
+					solver_copy.infer_new_information();
+
+					shuffle_cards(unused_cards, prng);
+
+					if (solver_copy.assign_cards_to_players(unused_cards) && solver_copy.are_constraints_satisfied())
+						++valid_iterations;
+				}
+
+				solution_probabilities.emplace_back(std::make_tuple(suspect, weapon, room), valid_iterations);
 			}
 		}
 	}
+
+	auto total_iterations = std::accumulate(solution_probabilities.begin(), solution_probabilities.end(), 0.0f, [](auto const& accumulator, auto const& pair) { return accumulator + pair.second; });
+
+	for (auto& pair : solution_probabilities)
+		pair.second /= total_iterations;
 
 	std::sort(solution_probabilities.begin(), solution_probabilities.end(), [](auto const& a, auto const& b) { return a.second > b.second; });
 
