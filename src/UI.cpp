@@ -70,6 +70,19 @@ private:
 
 Component Scroller(Component child) { return Make<ScrollerBase>(std::move(child)); }
 
+ButtonOption SmallButtonOption() {
+	ButtonOption option;
+	option.transform = [](EntryState const& s) {
+		auto label_element = text(s.label);
+		if (s.focused)
+			label_element |= inverted;
+
+		return ftxui::hbox(ftxui::text("["), label_element, ftxui::text("]"));
+	};
+
+	return option;
+}
+
 }
 
 namespace Cluedo {
@@ -89,7 +102,7 @@ ftxui::Component NumberInput(std::size_t& value, std::optional<std::size_t> mini
 						  (*m_on_change)();
 				  }
 			  },
-			  ftxui::ButtonOption::Ascii()
+			  ftxui::SmallButtonOption()
 			);
 
 			m_increase_button = ftxui::Button(
@@ -100,7 +113,7 @@ ftxui::Component NumberInput(std::size_t& value, std::optional<std::size_t> mini
 						  (*m_on_change)();
 				  }
 			  },
-			  ftxui::ButtonOption::Ascii()
+			  ftxui::SmallButtonOption()
 			);
 
 			Add(ftxui::Container::Horizontal({ m_decrease_button, m_increase_button }));
@@ -408,7 +421,7 @@ public:
 			  data.solver = solver;
 			  m_information_history.erase(m_information_history.begin());
 		  },
-		  ftxui::ButtonOption::Ascii()
+		  ftxui::SmallButtonOption()
 		);
 
 		m_information_history_scroller = ftxui::Scroller(ftxui::Renderer([&]() {
@@ -607,7 +620,7 @@ public:
 		  [&]() {
 			  m_solutions = data.solver.find_most_likely_solutions();
 		  },
-		  ftxui::ButtonOption::Ascii()
+		  ftxui::SmallButtonOption()
 		);
 
 		Add(ftxui::Container::Vertical({ m_refresh_button, m_solutions_scroller }));
