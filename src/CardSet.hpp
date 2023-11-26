@@ -46,14 +46,15 @@ public:
 	constexpr CardSet() = default;
 	constexpr CardSet(std::initializer_list<Card> cards) {
 		for (auto card : cards)
-			insert(card);
+			m_set[static_cast<std::size_t>(card)] = true;
+		m_size = cards.size();
 	}
 
 	constexpr CardSet(std::bitset<CardUtils::CARD_COUNT> set)
-	  : m_set(set) {}
+	  : m_set(set), m_size(set.count()) {}
 
-	constexpr std::size_t size() const { return m_set.count(); }
-	constexpr bool empty() const { return size() == 0; }
+	constexpr std::size_t size() const { return m_size; }
+	constexpr bool empty() const { return m_size == 0; }
 	constexpr bool contains(Card card) const { return m_set[static_cast<std::size_t>(card)]; }
 
 	constexpr bool insert(Card card) {
@@ -61,17 +62,29 @@ public:
 			return true;
 
 		m_set[static_cast<std::size_t>(card)] = true;
+		++m_size;
 		return false;
 	}
 
-	constexpr void erase(Card card) { m_set[static_cast<std::size_t>(card)] = false; }
-	constexpr void clear() { m_set.reset(); }
+	constexpr void erase(Card card) {
+		if (!contains(card))
+			return;
+
+		m_set[static_cast<std::size_t>(card)] = false;
+		--m_size;
+	}
+
+	constexpr void clear() {
+		m_set.reset();
+		m_size = 0;
+	}
 
 	constexpr bool operator==(CardSet const& other) const = default;
 	constexpr bool operator!=(CardSet const& other) const = default;
 
 	constexpr CardSet& set_union(CardSet const& other) {
 		m_set |= other.m_set;
+		m_size = m_set.count();
 		return *this;
 	}
 
@@ -83,6 +96,7 @@ public:
 
 private:
 	std::bitset<CardUtils::CARD_COUNT> m_set;
+	std::size_t m_size { 0 };
 };
 
 };

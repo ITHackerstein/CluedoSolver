@@ -254,27 +254,29 @@ std::vector<Solver::SolutionProbabilityPair> Solver::find_most_likely_solutions(
 				if (!possible_solution_cards.at(CardCategory::Suspect).contains(suspect) || !possible_solution_cards.at(CardCategory::Weapon).contains(weapon) || !possible_solution_cards.at(CardCategory::Room).contains(room))
 					continue;
 
+				auto solver_first_copy = *this;
+
+				solver_first_copy.learn_player_card_state(solver_first_copy.solution_player_index(), suspect, true, false);
+				solver_first_copy.learn_player_card_state(solver_first_copy.solution_player_index(), weapon, true, false);
+				solver_first_copy.learn_player_card_state(solver_first_copy.solution_player_index(), room, true, false);
+
+				std::vector<Card> unused_cards;
+				for (auto card : CardUtils::cards()) {
+					if (std::any_of(solver_first_copy.m_players.begin(), solver_first_copy.m_players.end(), [card](auto const& player) { return player.m_cards_in_hand.contains(card); }))
+						continue;
+
+					unused_cards.push_back(card);
+				}
+
+				solver_first_copy.infer_new_information();
+
 				std::size_t valid_iterations = 0;
 				for (std::size_t iteration = 0; iteration < max_iterations_per_solution; ++iteration) {
-					auto solver_copy = *this;
-
-					solver_copy.learn_player_card_state(solver_copy.solution_player_index(), suspect, true, false);
-					solver_copy.learn_player_card_state(solver_copy.solution_player_index(), weapon, true, false);
-					solver_copy.learn_player_card_state(solver_copy.solution_player_index(), room, true, false);
-
-					std::vector<Card> unused_cards;
-					for (auto card : CardUtils::cards()) {
-						if (std::any_of(solver_copy.m_players.begin(), solver_copy.m_players.end(), [card](auto const& player) { return player.m_cards_in_hand.contains(card); }))
-							continue;
-
-						unused_cards.push_back(card);
-					}
-
-					solver_copy.infer_new_information();
+					auto solver_second_copy = solver_first_copy;
 
 					shuffle_cards(unused_cards, prng);
 
-					if (solver_copy.assign_cards_to_players(unused_cards) && solver_copy.are_constraints_satisfied())
+					if (solver_second_copy.assign_cards_to_players(unused_cards) && solver_second_copy.are_constraints_satisfied())
 						++valid_iterations;
 				}
 
