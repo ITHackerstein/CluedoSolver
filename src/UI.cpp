@@ -386,8 +386,15 @@ public:
 	PlayersAndHistoryWindowBase(ComponentData& data) {
 		m_players_list = ftxui::Renderer([&]() {
 			ftxui::Elements elements;
-			for (std::size_t i = 0; i < data.solver.n_players(); ++i)
-				elements.push_back(ftxui::text(fmt::format("{} - {} {}", data.solver.player(i).name(), data.solver.player(i).n_cards(), Strings::the().get_string("UI.Cards"sv))));
+			for (std::size_t i = 0; i < data.solver.n_players(); ++i) {
+				elements.push_back(
+				  ftxui::hbox(
+				    ftxui::text(data.solver.player(i).name()) | ftxui::xflex,
+				    ftxui::text(" - "),
+				    ftxui::text(fmt::format("{} {}", data.solver.player(i).n_cards(), Strings::the().get_string("UI.Cards"sv)))
+				  )
+				);
+			}
 			return ftxui::vbox(elements);
 		});
 
