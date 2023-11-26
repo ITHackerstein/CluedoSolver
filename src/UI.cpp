@@ -159,15 +159,16 @@ Solver create_solver() {
 	for (std::size_t i = 0; i < player_count; ++i) {
 		auto player_name_input = ftxui::Input(&players_data.at(i).name, fmt::format("{}...", Strings::the().get_string("UI.NamePlaceholder"sv)));
 		auto card_number_input = NumberInput(players_data.at(i).n_cards, 1);
-		auto player_data_container = ftxui::Container::Horizontal({ player_name_input, card_number_input }) | ftxui::Renderer([i, player_name_input, card_number_input](ftxui::Element) {
-			                             return ftxui::hbox(
-			                               ftxui::text(fmt::format("{} {} ", Strings::the().get_string("Solver.Player"sv), i + 1)),
-			                               player_name_input->Render(),
-			                               ftxui::separator(),
-			                               card_number_input->Render(),
-			                               ftxui::text(fmt::format(" {}", Strings::the().get_string("UI.Cards"sv)))
-			                             );
-		                             });
+		auto player_data_container = ftxui::Container::Horizontal({ player_name_input, card_number_input });
+		player_data_container |= ftxui::Renderer([i, player_name_input, card_number_input](ftxui::Element) {
+			return ftxui::hbox(
+			  ftxui::text(fmt::format("{} {} ", Strings::the().get_string("Solver.Player"sv), i + 1)),
+			  player_name_input->Render(),
+			  ftxui::separator(),
+			  card_number_input->Render(),
+			  ftxui::text(fmt::format(" {}", Strings::the().get_string("UI.Cards"sv)))
+			);
+		});
 
 		player_data_components.push_back(ftxui::Maybe(player_data_container, [i, &player_count]() { return i < player_count; }));
 	}
