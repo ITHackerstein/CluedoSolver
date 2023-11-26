@@ -18,8 +18,8 @@ public:
 private:
 	static std::unique_ptr<Strings> s_instance;
 
-	Strings(nlohmann::json&& strings):
-		m_strings(std::move(strings)) {}
+	Strings(nlohmann::json&& strings)
+	  : m_strings(std::move(strings)) {}
 
 	static Result<void, std::string> find_error_strings(nlohmann::json const& strings);
 	static Result<void, std::string> find_card_category_strings(nlohmann::json const& strings);

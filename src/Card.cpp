@@ -28,7 +28,7 @@ std::string_view format_as(Card card) {
 	switch (card) {
 #define _ENUMERATE_CARD(x) \
 	case Card::x:            \
-		return Cluedo::Strings::the().get_string("Card."#x ## sv);
+		return Cluedo::Strings::the().get_string("Card." #x##sv);
 		_ENUMERATE_CARDS
 #undef _ENUMERATE_CARD
 	default:

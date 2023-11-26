@@ -11,9 +11,9 @@ std::string_view format_as(Error error) {
 
 	switch (error) {
 #define _ENUMERATE_ERROR(x) \
-	case Error::x: \
-		return Cluedo::Strings::the().get_string("Error."#x ## sv);
-	_ENUMERATE_ERRORS
+	case Error::x:            \
+		return Cluedo::Strings::the().get_string("Error." #x##sv);
+		_ENUMERATE_ERRORS
 #undef _ENUMERATE_ERROR
 	}
 

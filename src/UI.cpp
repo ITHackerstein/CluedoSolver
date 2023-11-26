@@ -398,17 +398,30 @@ public:
 			return ftxui::vbox(elements);
 		});
 
+		m_undo_button = ftxui::Button(
+		  std::string { Strings::the().get_string("UI.Undo"sv) },
+		  [&]() {
+			  if (m_information_history.empty())
+				  return;
+
+			  auto const& [turn, solver] = m_information_history.front();
+			  data.solver = solver;
+			  m_information_history.erase(m_information_history.begin());
+		  },
+		  ftxui::ButtonOption::Ascii()
+		);
+
 		m_information_history_scroller = ftxui::Scroller(ftxui::Renderer([&]() {
 			ftxui::Elements elements;
-			for (auto const& turn : m_information_history)
+			for (auto const& [turn, solver] : m_information_history)
 				elements.push_back(ftxui::text(turn));
 			return ftxui::vbox(elements);
 		}));
 
-		Add(m_information_history_scroller);
+		Add(ftxui::Container::Horizontal({ m_undo_button, m_information_history_scroller }));
 	}
 
-	void add_information(std::string const& turn) { m_information_history.insert(m_information_history.begin(), turn); }
+	void add_information(std::string const& turn, Solver const& old_solver) { m_information_history.emplace(m_information_history.begin(), turn, old_solver); }
 
 	ftxui::Element Render() override {
 		return ftxui::hbox(
@@ -417,7 +430,11 @@ public:
 		    m_players_list->Render()
 		  ),
 		  ftxui::window(
-		    ftxui::text(fmt::format(" {} ", Strings::the().get_string("UI.InformationHistory"sv))),
+		    ftxui::hbox(
+		      ftxui::text(fmt::format(" {} ", Strings::the().get_string("UI.InformationHistory"sv))),
+		      m_undo_button->Render(),
+		      ftxui::text(" ")
+		    ),
 		    m_information_history_scroller->Render() | ftxui::xflex | ftxui::size(ftxui::HEIGHT, ftxui::LESS_THAN, MAX_SCROLLER_HEIGHT)
 		  )
 		);
@@ -426,9 +443,10 @@ public:
 private:
 	static constexpr int MAX_SCROLLER_HEIGHT = 10;
 
-	std::vector<std::string> m_information_history;
+	std::vector<std::pair<std::string, Solver>> m_information_history;
 
 	ftxui::Component m_players_list;
+	ftxui::Component m_undo_button;
 	ftxui::Component m_information_history_scroller;
 };
 
@@ -436,7 +454,7 @@ std::shared_ptr<PlayersAndHistoryWindowBase> PlayersAndHistoryWindow(ComponentDa
 
 class NewInformationWindowBase : public ftxui::ComponentBase {
 public:
-	NewInformationWindowBase(ComponentData& data, std::function<void(std::string const&)> on_learn)
+	NewInformationWindowBase(ComponentData& data, std::function<void(std::string const&, Solver const&)> on_learn)
 	  : m_tab_names({ std::string { Strings::the().get_string("UI.PlayerHasHasntGotCard"sv) }, std::string { Strings::the().get_string("UI.PlayerMadeASuggestion"sv) } })
 	  , m_selected_tab(0)
 	  , m_on_learn(on_learn) {
@@ -449,9 +467,10 @@ public:
 		m_learn_button = ftxui::Button(
 		  std::string { Strings::the().get_string("UI.Learn"sv) },
 		  [&]() {
+			  auto old_solver = data.solver;
 			  auto result = learn(data.solver);
 			  if (result)
-				  m_on_learn(*result);
+				  m_on_learn(*result, old_solver);
 		  },
 		  ftxui::ButtonOption::Border()
 		);
@@ -524,7 +543,7 @@ public:
 private:
 	std::vector<std::string> m_tab_names;
 	int m_selected_tab;
-	std::function<void(std::string const&)> m_on_learn;
+	std::function<void(std::string const&, Solver const&)> m_on_learn;
 	std::optional<Error> m_maybe_error;
 
 	std::shared_ptr<LearnPlayerCardStateTabBase> m_learn_player_card_state_tab;
@@ -535,7 +554,7 @@ private:
 	ftxui::Component m_maybe_error_component;
 };
 
-std::shared_ptr<NewInformationWindowBase> NewInformationWindow(ComponentData& data, std::function<void(std::string const&)> on_learn) { return ftxui::Make<NewInformationWindowBase>(data, on_learn); }
+std::shared_ptr<NewInformationWindowBase> NewInformationWindow(ComponentData& data, std::function<void(std::string const&, Solver const&)> on_learn) { return ftxui::Make<NewInformationWindowBase>(data, on_learn); }
 
 class GameWindowBase : public ftxui::ComponentBase {
 public:
@@ -543,7 +562,7 @@ public:
 		m_end_game_button = ftxui::Button(std::string { Strings::the().get_string("UI.EndGame"sv) }, on_end, ftxui::ButtonOption::Border());
 
 		m_players_and_history_window = PlayersAndHistoryWindow(data);
-		m_new_information_window = NewInformationWindow(data, [&](std::string const& turn) { m_players_and_history_window->add_information(turn); });
+		m_new_information_window = NewInformationWindow(data, [&](std::string const& turn, Solver const& old_solver) { m_players_and_history_window->add_information(turn, old_solver); });
 
 		Add(ftxui::Container::Vertical({ m_players_and_history_window, m_new_information_window, m_end_game_button }));
 	}
