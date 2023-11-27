@@ -141,6 +141,9 @@ Result<void, std::string> Strings::find_ui_strings(json const& strings) {
 	if (!has_string(ui_strings, "Players"sv))
 		return "language file doesn't contain 'UI.Players'"s;
 
+	if (!has_string(ui_strings, "Undo"sv))
+		return "language file doesn't contain 'UI.Undo'"s;
+
 	if (!has_string(ui_strings, "InformationHistory"sv))
 		return "language file doesn't contain 'UI.InformationHistory'"s;
 
