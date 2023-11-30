@@ -481,9 +481,18 @@ public:
 		  std::string { Strings::the().get_string("UI.Learn"sv) },
 		  [&]() {
 			  auto old_solver = data.solver;
-			  auto result = learn(data.solver);
-			  if (result)
-				  m_on_learn(*result, old_solver);
+			  auto maybe_turn = learn(data.solver);
+			  if (!maybe_turn)
+				  return;
+
+			  if (data.solver.are_constraints_satisfied()) {
+				  m_on_learn(*maybe_turn, old_solver);
+				  m_maybe_error.reset();
+				  return;
+			  }
+
+			  data.solver = old_solver;
+			  m_maybe_error = Error::InvalidInformation;
 		  },
 		  ftxui::ButtonOption::Border()
 		);

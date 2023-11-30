@@ -3,3 +3,4 @@ repos:
     rev: 'v16.0.6'
     hooks:
     -   id: clang-format
+        exclude: ^res/

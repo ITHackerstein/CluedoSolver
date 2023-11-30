@@ -80,6 +80,21 @@ void Solver::learn_from_suggestion(Suggestion const& suggestion, bool infer_new_
 		infer_new_information();
 }
 
+bool Solver::are_constraints_satisfied() const {
+	CardSet all_player_cards;
+	for (auto const& player : m_players) {
+		if (!CardSet::intersection(player.m_cards_in_hand, player.m_cards_not_in_hand).empty())
+			return false;
+
+		if (!CardSet::intersection(all_player_cards, player.m_cards_in_hand).empty())
+			return false;
+
+		all_player_cards.set_union(player.m_cards_in_hand);
+	}
+
+	return true;
+}
+
 void Solver::infer_new_information() {
 	// This loops goes over all cards, and checks if all players but one have it.
 	// In that case we know the player who owns it.
@@ -202,7 +217,7 @@ bool Solver::assign_cards_to_players(std::vector<Card> const& cards) {
 	return true;
 }
 
-bool Solver::are_constraints_satisfied() const {
+bool Solver::are_constraints_satisfied_for_solution_search() const {
 	CardSet all_player_cards;
 	for (auto const& player : m_players) {
 		if (player.m_cards_in_hand.size() != player.n_cards())
@@ -276,7 +291,7 @@ std::vector<Solver::SolutionProbabilityPair> Solver::find_most_likely_solutions(
 
 					shuffle_cards(unused_cards, prng);
 
-					if (solver_second_copy.assign_cards_to_players(unused_cards) && solver_second_copy.are_constraints_satisfied())
+					if (solver_second_copy.assign_cards_to_players(unused_cards) && solver_second_copy.are_constraints_satisfied_for_solution_search())
 						++valid_iterations;
 				}
 

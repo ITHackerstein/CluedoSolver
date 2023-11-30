@@ -4,10 +4,11 @@
 
 namespace Cluedo {
 
-#define _ENUMERATE_ERRORS                  \
-	_ENUMERATE_ERROR(InvalidNumberOfPlayers) \
-	_ENUMERATE_ERROR(InvalidNumberOfCards)   \
-	_ENUMERATE_ERROR(SuggestingPlayerEqualToRespondingPlayer)
+#define _ENUMERATE_ERRORS                                   \
+	_ENUMERATE_ERROR(InvalidNumberOfPlayers)                  \
+	_ENUMERATE_ERROR(InvalidNumberOfCards)                    \
+	_ENUMERATE_ERROR(SuggestingPlayerEqualToRespondingPlayer) \
+	_ENUMERATE_ERROR(InvalidInformation)
 
 enum class Error {
 #define _ENUMERATE_ERROR(x) x,

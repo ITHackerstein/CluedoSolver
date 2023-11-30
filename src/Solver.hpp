@@ -39,6 +39,8 @@ public:
 
 	void learn_from_suggestion(Suggestion const&, bool infer_new_info = true);
 
+	bool are_constraints_satisfied() const;
+
 	using SolutionProbabilityPair = std::pair<std::tuple<Card, Card, Card>, float>;
 	std::vector<SolutionProbabilityPair> find_most_likely_solutions() const;
 
@@ -52,7 +54,7 @@ private:
 
 	void infer_new_information();
 	bool assign_cards_to_players(std::vector<Card> const& cards);
-	bool are_constraints_satisfied() const;
+	bool are_constraints_satisfied_for_solution_search() const;
 
 	std::vector<Player> m_players;
 };
