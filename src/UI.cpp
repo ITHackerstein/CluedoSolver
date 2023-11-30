@@ -338,20 +338,16 @@ public:
 		if (suggestion.suggesting_player_index == suggestion.responding_player_index)
 			return Error::SuggestingPlayerEqualToRespondingPlayer;
 
-		if (m_responding_card != 0) {
-			auto card_category = static_cast<CardCategory>(m_responding_card - 1);
-
-			switch (card_category) {
-			case CardCategory::Suspect:
-				suggestion.response_card = suggestion.suspect;
-				break;
-			case CardCategory::Weapon:
-				suggestion.response_card = suggestion.weapon;
-				break;
-			case CardCategory::Room:
-				suggestion.response_card = suggestion.room;
-				break;
-			}
+		switch (m_responding_card) {
+		case 1:
+			suggestion.response_card = suggestion.suspect;
+			break;
+		case 2:
+			suggestion.response_card = suggestion.weapon;
+			break;
+		case 3:
+			suggestion.response_card = suggestion.room;
+			break;
 		}
 
 		return suggestion;
@@ -431,7 +427,7 @@ public:
 			return ftxui::vbox(elements);
 		}));
 
-		Add(ftxui::Container::Horizontal({ m_undo_button, m_information_history_scroller }));
+		Add(ftxui::Container::Vertical({ m_undo_button, m_information_history_scroller }));
 	}
 
 	void add_information(std::string const& turn, Solver const& old_solver) { m_information_history.emplace(m_information_history.begin(), turn, old_solver); }
