@@ -51,14 +51,15 @@ Result<void, std::string> Strings::find_card_category_strings(json const& string
 	if (!card_category_strings.is_object())
 		return "'CardCategory' isn't an object"s;
 
-	if (!has_string(card_category_strings, "Suspect"sv))
-		return "language file doesn't contain 'CardCategory.Suspect'"s;
+#define FIND_STRING(key)                            \
+	if (!has_string(card_category_strings, #key##sv)) \
+		return "language file doesn't contain 'CardCategory." #key "'"##s;
 
-	if (!has_string(card_category_strings, "Weapon"sv))
-		return "language file doesn't contain 'CardCategory.Weapon'"s;
+	FIND_STRING(Suspect)
+	FIND_STRING(Weapon)
+	FIND_STRING(Room)
 
-	if (!has_string(card_category_strings, "Room"sv))
-		return "language file doesn't contain 'CardCategory.Room'"s;
+#undef FIND_STRING
 
 	return {};
 }
@@ -90,8 +91,13 @@ Result<void, std::string> Strings::find_solver_strings(json const& strings) {
 	if (!solver_strings.is_object())
 		return "'Solver' isn't an object"s;
 
-	if (!has_string(solver_strings, "Player"sv))
-		return "language file doesn't contain 'Solver.Player'"s;
+#define FIND_STRING(key)                     \
+	if (!has_string(solver_strings, #key##sv)) \
+		return "language file doesn't contain 'Solver." #key "'"##s;
+
+	FIND_STRING(Player)
+
+#undef FIND_STRING
 
 	return {};
 }
@@ -105,80 +111,37 @@ Result<void, std::string> Strings::find_ui_strings(json const& strings) {
 	if (!ui_strings.is_object())
 		return "'UI' isn't an object"s;
 
-	if (!has_string(ui_strings, "ErrorPrefix"sv))
-		return "language file doesn't contain 'UI.ErrorPrefix'"s;
+#define FIND_STRING(key)                     \
+	if (!has_string(ui_strings, #key##sv)) \
+		return "language file doesn't contain 'UI." #key "'"##s;
 
-	if (!has_string(ui_strings, "NumberOfPlayers"sv))
-		return "language file doesn't contain 'UI.NumberOfPlayers'"s;
+	FIND_STRING(ErrorPrefix)
+	FIND_STRING(NumberOfPlayers)
+	FIND_STRING(NamePlaceholder)
+	FIND_STRING(Cards)
+	FIND_STRING(StartGame)
+	FIND_STRING(GameData)
+	FIND_STRING(NoOne)
+	FIND_STRING(Unknown)
+	FIND_STRING(Suggested)
+	FIND_STRING(RespondedWith)
+	FIND_STRING(Responded)
+	FIND_STRING(Players)
+	FIND_STRING(Undo)
+	FIND_STRING(InformationHistory)
+	FIND_STRING(PlayerHasHasntGotCard)
+	FIND_STRING(PlayerMadeASuggestion)
+	FIND_STRING(Learn)
+	FIND_STRING(HasGot)
+	FIND_STRING(HasntGot)
+	FIND_STRING(NoOneResponded)
+	FIND_STRING(NewInformation)
+	FIND_STRING(EndGame)
+	FIND_STRING(Game)
+	FIND_STRING(Refresh)
+	FIND_STRING(Solutions)
 
-	if (!has_string(ui_strings, "NamePlaceholder"sv))
-		return "language file doesn't contain 'UI.NamePlaceholder'"s;
-
-	if (!has_string(ui_strings, "Cards"sv))
-		return "language file doesn't contain 'UI.Cards'"s;
-
-	if (!has_string(ui_strings, "StartGame"sv))
-		return "language file doesn't contain 'UI.StartGame'"s;
-
-	if (!has_string(ui_strings, "GameData"sv))
-		return "language file doesn't contain 'UI.GameData'"s;
-
-	if (!has_string(ui_strings, "NoOne"sv))
-		return "language file doesn't contain 'UI.NoOne'"s;
-
-	if (!has_string(ui_strings, "Unknown"sv))
-		return "language file doesn't contain 'UI.Unknown'"s;
-
-	if (!has_string(ui_strings, "Suggested"sv))
-		return "language file doesn't contain 'UI.Suggested'"s;
-
-	if (!has_string(ui_strings, "RespondedWith"sv))
-		return "language file doesn't contain 'UI.RespondedWith'"s;
-
-	if (!has_string(ui_strings, "Responded"sv))
-		return "language file doesn't contain 'UI.Responded'"s;
-
-	if (!has_string(ui_strings, "Players"sv))
-		return "language file doesn't contain 'UI.Players'"s;
-
-	if (!has_string(ui_strings, "Undo"sv))
-		return "language file doesn't contain 'UI.Undo'"s;
-
-	if (!has_string(ui_strings, "InformationHistory"sv))
-		return "language file doesn't contain 'UI.InformationHistory'"s;
-
-	if (!has_string(ui_strings, "PlayerHasHasntGotCard"sv))
-		return "language file doesn't contain 'UI.PlayerHasHasntGotCard'"s;
-
-	if (!has_string(ui_strings, "PlayerMadeASuggestion"sv))
-		return "language file doesn't contain 'UI.PlayerMadeASuggestion'"s;
-
-	if (!has_string(ui_strings, "Learn"sv))
-		return "language file doesn't contain 'UI.Learn'"s;
-
-	if (!has_string(ui_strings, "HasGot"sv))
-		return "language file doesn't contain 'UI.HasGot'"s;
-
-	if (!has_string(ui_strings, "HasntGot"sv))
-		return "language file doesn't contain 'UI.HasntGot'"s;
-
-	if (!has_string(ui_strings, "NoOneResponded"sv))
-		return "language file doesn't contain 'UI.NoOneResponded'"s;
-
-	if (!has_string(ui_strings, "NewInformation"sv))
-		return "language file doesn't contain 'UI.NewInformation'"s;
-
-	if (!has_string(ui_strings, "EndGame"sv))
-		return "language file doesn't contain 'UI.EndGame'"s;
-
-	if (!has_string(ui_strings, "Game"sv))
-		return "language file doesn't contain 'UI.Game'"s;
-
-	if (!has_string(ui_strings, "Refresh"sv))
-		return "language file doesn't contain 'UI.Refresh'"s;
-
-	if (!has_string(ui_strings, "Solutions"sv))
-		return "language file doesn't contain 'UI.Solutions'"s;
+#undef FIND_STRING
 
 	return {};
 }
