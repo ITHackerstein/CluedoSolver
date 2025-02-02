@@ -4,7 +4,7 @@
 #include <nlohmann/json.hpp>
 
 #include "Error.hpp"
-#include "Utils/Result.hpp"
+#include "utils/Result.hpp"
 
 namespace Cluedo {
 

@@ -3,7 +3,7 @@
 #include "CardSet.hpp"
 #include "Error.hpp"
 #include "Player.hpp"
-#include "Utils/Result.hpp"
+#include "utils/Result.hpp"
 
 namespace Cluedo {
 

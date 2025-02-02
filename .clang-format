@@ -221,4 +221,5 @@ WhitespaceSensitiveMacros:
   - PP_STRINGIZE
   - STRINGIZE
 ...
-
+Language: Json
+DisableFormat: true

@@ -1,10 +1,10 @@
 #include "Solver.hpp"
 
-#include <PCG/pcg_random.hpp>
 #include <algorithm>
 #include <fmt/core.h>
 #include <fmt/ranges.h>
 #include <numeric>
+#include <pcg_random.hpp>
 #include <random>
 #include <unordered_map>
 #include <unordered_set>
