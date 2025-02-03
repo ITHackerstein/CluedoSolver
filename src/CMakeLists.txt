@@ -16,7 +16,9 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(json)
 
 find_package(OpenGL REQUIRED)
-add_subdirectory("${CMAKE_SOURCE_DIR}/src/libs/SDL2")
+# set(SDL_SHARED OFF CACHE BOOL "")
+# set(SDL_TEST OFF CACHE BOOL "")
+add_subdirectory("${CMAKE_SOURCE_DIR}/src/libs/SDL2" EXCLUDE_FROM_ALL)
 set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/src/libs/imgui")
 file(GLOB IMGUI_SOURCE_FILES "${IMGUI_DIR}/*.cpp")
 set(IMGUI_SOURCE_FILES ${IMGUI_SOURCE_FILES}
