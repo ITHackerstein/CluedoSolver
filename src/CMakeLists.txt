@@ -106,6 +106,11 @@ target_compile_options(CluedoSolver PRIVATE
 	-Wshadow
 	-Werror
 )
+
+if (WIN32)
+	set_target_properties(CluedoSolver PROPERTIES WIN32_EXECUTABLE 1)
+endif()
+
 target_include_directories(CluedoSolver PUBLIC
 	${CMAKE_SOURCE_DIR}/src/libs/PCG/
 	${IMGUI_DIR}
