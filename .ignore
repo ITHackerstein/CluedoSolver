@@ -1,3 +1,5 @@
 .cache/
 build/
 src/libs
+src/fonts
+src/lang

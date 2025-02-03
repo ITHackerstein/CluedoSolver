@@ -1,3 +1,3 @@
 .cache/
 build/
-src/fonts/*.ttf
+src/fonts/*.cpp
