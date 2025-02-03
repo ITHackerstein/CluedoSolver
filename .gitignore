@@ -1,3 +1,4 @@
 .cache/
 build/
 src/fonts/*.cpp
+src/lang/*.cpp

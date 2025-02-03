@@ -1,8 +1,6 @@
+#include "LanguageStrings.hpp"
 #include "Solver.hpp"
-#include "Strings.hpp"
-#include "fonts/IBMPlexSans-Medium.cpp"
-#include "fonts/fa-regular-400.cpp"
-#include "fonts/fa-solid-900.cpp"
+#include "fonts/fonts.cpp"
 #include "utils/IconsFontAwesome.h"
 
 #include <fmt/color.h>
@@ -21,10 +19,16 @@
 #include <imgui_impl_sdl2.h>
 #include <imgui_stdlib.h>
 
+#define S(key) (Cluedo::LanguageStrings::the().get_string((key)))
+#define CSTR(s) (std::string { (s) }.c_str())
+
+using namespace std::literals;
+
 size_t const u64_one = 1;
 
 struct UIData {
 	bool running { true };
+	int style { 1 };
 
 	// New game modal data
 	bool show_new_game_modal { false };
@@ -86,7 +90,7 @@ T clamp(T value, T min, T max) {
 }
 
 void show_error_modal(UIData& ui_data) {
-	if (ImGui::BeginPopupModal("Error", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+	if (ImGui::BeginPopupModal(CSTR(S("UI.Error")), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
 		ImGui::PushStyleColor(ImGuiCol_Text, 0xCA0B00FF);
 		ImGui::AlignTextToFramePadding();
 		ImGui::TextColored({ 0.79f, 0.04f, 0.00f, 1.00f }, ICON_FA_TRIANGLE_EXCLAMATION);
@@ -96,48 +100,87 @@ void show_error_modal(UIData& ui_data) {
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Spacing();
-		if (ImGui::Button("Ok")) {
+		if (ImGui::Button(CSTR(S("UI.Ok")))) {
 			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
 	}
 }
 
-// FIXME: Handle shortcuts
 void show_menubar(UIData& ui_data) {
 	if (ImGui::BeginMenuBar()) {
-		if (ImGui::BeginMenu("Game")) {
-			if (ImGui::MenuItem("New", "CTRL+N")) {
+		if (ImGui::BeginMenu(CSTR(S("UI.Game")))) {
+			if (ImGui::MenuItem(CSTR(S("UI.New")), "CTRL+N")) {
 				ui_data.show_new_game_modal = true;
 				ui_data.initialize_new_game_data();
 			}
 
-			if (ImGui::MenuItem("Add information", "CTRL+Enter", nullptr, ui_data.solver.has_value())) {
+			ImGui::Separator();
+
+			if (ImGui::MenuItem(CSTR(S("UI.AddInformation")), "CTRL+Enter", nullptr, ui_data.solver.has_value())) {
 				ui_data.show_add_information_modal = true;
 				ui_data.initialize_add_information_data();
 			}
 
-			if (ImGui::MenuItem("Player data", nullptr, nullptr, ui_data.solver.has_value())) {
+			if (ImGui::MenuItem(CSTR(S("UI.PlayerData")), nullptr, nullptr, ui_data.solver.has_value())) {
 				ui_data.show_player_data_modal = true;
 			}
 			ImGui::EndMenu();
 		}
-		// FIXME: Add language and theme selection
-		if (ImGui::BeginMenu("Settings")) {
+
+		if (ImGui::BeginMenu(CSTR(S("UI.Settings")))) {
+			if (ImGui::BeginMenu(CSTR(S("UI.Language")))) {
+				for (auto language : Cluedo::LanguageStrings::languages()) {
+					if (ImGui::MenuItem(std::string { language.name }.c_str(), nullptr, language.id == Cluedo::LanguageStrings::the().current_language_id())) {
+						Cluedo::LanguageStrings::the().set_language(language.id);
+					}
+				}
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu(CSTR(S("UI.Theme")))) {
+				if (ImGui::MenuItem(CSTR(S("UI.Light")), nullptr, ui_data.style == 0)) {
+					ui_data.style = 0;
+					ImGui::StyleColorsLight();
+				}
+
+				if (ImGui::MenuItem(CSTR(S("UI.Dark")), nullptr, ui_data.style == 1)) {
+					ui_data.style = 1;
+					ImGui::StyleColorsDark();
+				}
+
+				ImGui::EndMenu();
+			}
 			ImGui::EndMenu();
 		}
-		// FIXME: Add about info
-		if (ImGui::BeginMenu("About")) {
-			ImGui::EndMenu();
+
+		if (ImGui::MenuItem(CSTR(S("UI.About")))) {
+			ImGui::OpenPopup(CSTR(S("UI.About")));
 		}
+
+		if (ImGui::BeginPopupModal(CSTR(S("UI.About")), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+			ImGui::TextUnformatted(CSTR(S("UI.AboutText")));
+			ImGui::Spacing();
+			ImGui::TextDisabled("%s", CSTR(S("UI.AuthorInfo")));
+			ImGui::Spacing();
+			ImGui::Separator();
+			ImGui::Spacing();
+			if (ImGui::Button(CSTR(S("UI.Close")))) {
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
 		ImGui::EndMenuBar();
 	}
 }
 
 void show_information_history_section(UIData& ui_data) {
-	if (ImGui::BeginChild("information-history", { 0.0f, std::min(300.0f, ImGui::GetContentRegionAvail().y * 0.3f) })) {
+	if (ImGui::BeginChild("##information-history", { 0.0f, std::min(300.0f, ImGui::GetContentRegionAvail().y * 0.3f) })) {
 		if (ui_data.solver) {
-			if (ImGui::Button(ICON_FA_ARROW_ROTATE_LEFT " Undo last information")) {
+			auto button_text = fmt::format("{} {}", ICON_FA_ARROW_ROTATE_LEFT, S("UI.UndoLastInformation"));
+			if (ImGui::Button(button_text.c_str())) {
 				auto [_, solver] = std::move(ui_data.information_history.back());
 				ui_data.information_history.pop_back();
 				ui_data.solver = solver;
@@ -157,7 +200,7 @@ void show_information_history_section(UIData& ui_data) {
 }
 
 void show_solutions_section(UIData& ui_data) {
-	if (ImGui::BeginChild("solutions")) {
+	if (ImGui::BeginChild("##solutions")) {
 		if (ui_data.solver) {
 			for (auto const& [solution, probability] : ui_data.solutions) {
 				auto [suspect, weapon, room] = solution;
@@ -179,8 +222,8 @@ void show_solutions_section(UIData& ui_data) {
 }
 
 void show_new_game_modal(UIData& ui_data) {
-	if (ImGui::BeginPopupModal("New game", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-		if (ImGui::InputScalar("Number of players", ImGuiDataType_U64, &ui_data.new_game_player_count, &u64_one)) {
+	if (ImGui::BeginPopupModal(CSTR(S("UI.NewGame")), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+		if (ImGui::InputScalar(CSTR(S("UI.NumberOfPlayers")), ImGuiDataType_U64, &ui_data.new_game_player_count, &u64_one)) {
 			ui_data.new_game_player_count = clamp(ui_data.new_game_player_count, Cluedo::Solver::MIN_PLAYER_COUNT, Cluedo::Solver::MAX_PLAYER_COUNT);
 			if (ui_data.new_game_players_data.size() != ui_data.new_game_player_count) {
 				ui_data.new_game_players_data.resize(ui_data.new_game_player_count);
@@ -201,10 +244,10 @@ void show_new_game_modal(UIData& ui_data) {
 			}
 		}
 
-		ImGui::SeparatorText("Players");
+		ImGui::SeparatorText(CSTR(S("UI.Players")));
 		for (size_t i = 0; i < ui_data.new_game_players_data.size(); ++i) {
 			ImGui::PushID(i);
-			ImGui::InputTextWithHint("##name", fmt::format("Player {}", i + 1).c_str(), &ui_data.new_game_players_data.at(i).name);
+			ImGui::InputTextWithHint("##name", fmt::format("{} {}", S("UI.Player"), i + 1).c_str(), &ui_data.new_game_players_data.at(i).name);
 			ImGui::SameLine();
 
 			float spacing = ImGui::GetStyle().ItemInnerSpacing.x;
@@ -218,7 +261,7 @@ void show_new_game_modal(UIData& ui_data) {
 				ui_data.new_game_players_data.at(i).n_cards = std::max(ui_data.new_game_players_data.at(i).n_cards + 1, 1uz);
 			}
 			ImGui::SameLine();
-			ImGui::Text("cards");
+			ImGui::TextUnformatted(CSTR(S("UI.Cards")));
 			ImGui::PopID();
 		}
 
@@ -226,11 +269,11 @@ void show_new_game_modal(UIData& ui_data) {
 		ImGui::Separator();
 		ImGui::Spacing();
 
-		if (ImGui::Button("Ok")) {
+		if (ImGui::Button(CSTR(S("UI.Ok")))) {
 			auto maybe_solver = Cluedo::Solver::create(ui_data.new_game_players_data);
 			if (maybe_solver.is_error()) {
-				ui_data.error_message = fmt::format("Error while creating solver: {}!", maybe_solver.release_error());
-				ImGui::OpenPopup("Error");
+				ui_data.error_message = fmt::format("{}: {}!", S("UI.ErrorWhileCreatingGame"), maybe_solver.release_error());
+				ImGui::OpenPopup(CSTR(S("UI.Error")));
 			} else {
 				ui_data.solver = maybe_solver.release_value();
 				ui_data.solutions = ui_data.solver->find_most_likely_solutions();
@@ -243,7 +286,7 @@ void show_new_game_modal(UIData& ui_data) {
 
 		ImGui::SameLine();
 
-		if (ImGui::Button("Cancel")) {
+		if (ImGui::Button(CSTR(S("UI.Cancel")))) {
 			ImGui::CloseCurrentPopup();
 		}
 
@@ -270,8 +313,8 @@ void show_player_combobox(char const* id, Cluedo::Solver const& solver, size_t& 
 
 void show_optional_player_combobox(char const* id, Cluedo::Solver const& solver, std::optional<size_t>& selection) {
 	ImGui::PushID(id);
-	if (ImGui::BeginCombo("##", selection.has_value() ? solver.player(*selection).name().c_str() : "No one", ImGuiComboFlags_WidthFitPreview)) {
-		if (ImGui::Selectable("No one", !selection.has_value())) {
+	if (ImGui::BeginCombo("##", selection.has_value() ? solver.player(*selection).name().c_str() : CSTR(S("UI.NoOne")), ImGuiComboFlags_WidthFitPreview)) {
+		if (ImGui::Selectable(CSTR(S("UI.NoOne")), !selection.has_value())) {
 			selection.reset();
 		}
 
@@ -313,8 +356,8 @@ void show_card_combobox(char const* id, auto cards_iterator, Cluedo::Card& selec
 
 void show_optional_card_category_combobox(char const* id, std::optional<Cluedo::CardCategory>& selection) {
 	ImGui::PushID(id);
-	if (ImGui::BeginCombo("##", selection ? fmt::format("{}", *selection).c_str() : "Unknown", ImGuiComboFlags_WidthFitPreview)) {
-		if (ImGui::Selectable("Unknown", !selection.has_value())) {
+	if (ImGui::BeginCombo("##", selection ? fmt::format("{}", *selection).c_str() : CSTR(S("UI.Unknown")), ImGuiComboFlags_WidthFitPreview)) {
+		if (ImGui::Selectable(CSTR(S("UI.Unknown")), !selection.has_value())) {
 			selection.reset();
 		}
 		if (!selection.has_value()) {
@@ -336,16 +379,16 @@ void show_optional_card_category_combobox(char const* id, std::optional<Cluedo::
 }
 
 void show_add_information_modal(UIData& ui_data) {
-	if (ImGui::BeginPopupModal("Add information", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+	if (ImGui::BeginPopupModal(CSTR(S("UI.AddInformation")), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
 		if (ImGui::BeginTabBar("##information-type-tab-bar", ImGuiTabBarFlags_None)) {
-			if (ImGui::BeginTabItem("Player has/hasn't got a card")) {
+			if (ImGui::BeginTabItem(CSTR(S("UI.PlayerHasHasntGotACard")))) {
 				ui_data.selected_tab_index = 0;
 
 				show_player_combobox("player-combo", *ui_data.solver, ui_data.first_tab_selected_player);
 
 				ImGui::SameLine();
 				ImGui::PushID("has-card-checkbox");
-				ImGui::Checkbox(ui_data.first_tab_is_has_card_checked ? "has got" : "hasn't got", &ui_data.first_tab_is_has_card_checked);
+				ImGui::Checkbox(CSTR(S(ui_data.first_tab_is_has_card_checked ? "UI.HasGot" : "UI.HasntGot")), &ui_data.first_tab_is_has_card_checked);
 				ImGui::PopID();
 
 				ImGui::SameLine();
@@ -354,13 +397,13 @@ void show_add_information_modal(UIData& ui_data) {
 				ImGui::EndTabItem();
 			}
 
-			if (ImGui::BeginTabItem("Player made a suggestion")) {
+			if (ImGui::BeginTabItem(CSTR(S("UI.PlayerMadeASuggestion")))) {
 				ui_data.selected_tab_index = 1;
 
 				show_player_combobox("suggesting-player-combo", *ui_data.solver, ui_data.second_tab_suggestion.suggesting_player_index);
 
 				ImGui::SameLine();
-				ImGui::Text("suggested");
+				ImGui::TextUnformatted(CSTR(S("UI.Suggested")));
 
 				ImGui::SameLine();
 				show_card_combobox("suspect-combo", Cluedo::CardUtils::cards_per_category(Cluedo::CardCategory::Suspect), ui_data.second_tab_suggestion.suspect);
@@ -374,7 +417,7 @@ void show_add_information_modal(UIData& ui_data) {
 				show_optional_player_combobox("responding-player-combo", *ui_data.solver, ui_data.second_tab_suggestion.responding_player_index);
 
 				ImGui::SameLine();
-				ImGui::Text(ui_data.second_tab_suggestion.responding_player_index ? "responded with" : "responded");
+				ImGui::TextUnformatted(CSTR(S(ui_data.second_tab_suggestion.responding_player_index ? "UI.RespondedWith" : "UI.Responded")));
 
 				if (ui_data.second_tab_suggestion.responding_player_index) {
 					ImGui::SameLine();
@@ -390,7 +433,7 @@ void show_add_information_modal(UIData& ui_data) {
 		ImGui::Separator();
 		ImGui::Spacing();
 
-		if (ImGui::Button("Learn")) {
+		if (ImGui::Button(CSTR(S("UI.Learn")))) {
 			if (ui_data.second_tab_response_card_category) {
 				switch (*ui_data.second_tab_response_card_category) {
 				case Cluedo::CardCategory::Suspect:
@@ -409,7 +452,7 @@ void show_add_information_modal(UIData& ui_data) {
 
 			if (ui_data.selected_tab_index == 1 && ui_data.second_tab_suggestion.responding_player_index == ui_data.second_tab_suggestion.suggesting_player_index) {
 				ImGui::OpenPopup("Error");
-				ui_data.error_message = fmt::format("Error while learning new information: {}!", Cluedo::Error::SuggestingPlayerEqualToRespondingPlayer);
+				ui_data.error_message = fmt::format("{}: {}!", S("UI.ErrorWhileLearningNewInformation"), Cluedo::Error::SuggestingPlayerEqualToRespondingPlayer);
 			} else {
 				auto old_solver = *ui_data.solver;
 				std::string information;
@@ -417,7 +460,7 @@ void show_add_information_modal(UIData& ui_data) {
 					ui_data.solver->learn_player_card_state(ui_data.first_tab_selected_player, ui_data.first_tab_selected_card, ui_data.first_tab_is_has_card_checked);
 
 					auto player_name = ui_data.solver->player(ui_data.first_tab_selected_player).name();
-					information = fmt::format("{} {} got {}", player_name, ui_data.first_tab_is_has_card_checked ? "has" : "hasn't", ui_data.first_tab_selected_card);
+					information = fmt::format("{} {} {}", player_name, S(ui_data.first_tab_is_has_card_checked ? "UI.Has" : "UI.Hasnt"), ui_data.first_tab_selected_card);
 				} else if (ui_data.selected_tab_index == 1) {
 					ui_data.solver->learn_from_suggestion(ui_data.second_tab_suggestion);
 
@@ -425,24 +468,24 @@ void show_add_information_modal(UIData& ui_data) {
 					if (ui_data.second_tab_suggestion.responding_player_index) {
 						auto const& responding_player_name = ui_data.solver->player(*ui_data.second_tab_suggestion.responding_player_index).name();
 						if (ui_data.second_tab_suggestion.response_card) {
-							response = fmt::format("{} responded with {}", responding_player_name, *ui_data.second_tab_suggestion.response_card);
+							response = fmt::format("{} {} {}", responding_player_name, S("UI.RespondedWith"), *ui_data.second_tab_suggestion.response_card);
 						} else {
-							response = fmt::format("{} responded", responding_player_name);
+							response = fmt::format("{} {}", responding_player_name, S("UI.Responded"));
 						}
 					} else {
-						response = "no one responded";
+						response = S("UI.NoOneResponded");
 					}
 
 					auto suggestion_player_name = ui_data.solver->player(ui_data.second_tab_suggestion.suggesting_player_index).name();
 					auto suspect = ui_data.second_tab_suggestion.suspect;
 					auto weapon = ui_data.second_tab_suggestion.weapon;
 					auto room = ui_data.second_tab_suggestion.room;
-					information = fmt::format("{} suggested {}, {}, {} and {}", suggestion_player_name, suspect, weapon, room, response);
+					information = fmt::format("{} {} {}, {}, {} {} {}", suggestion_player_name, S("UI.Suggested"), suspect, weapon, room, S("UI.And"), response);
 				}
 
 				if (!ui_data.solver->are_constraints_satisfied()) {
-					ImGui::OpenPopup("Error");
-					ui_data.error_message = fmt::format("Error while learning new information: {}!", Cluedo::Error::InvalidInformation);
+					ImGui::OpenPopup(CSTR(S("UI.Error")));
+					ui_data.error_message = fmt::format("{}: {}!", S("UI.ErrorWhileLearningNewInformation"), Cluedo::Error::InvalidInformation);
 					ui_data.solver = old_solver;
 				} else {
 					ui_data.information_history.emplace_back(information, old_solver);
@@ -459,17 +502,17 @@ void show_add_information_modal(UIData& ui_data) {
 }
 
 void show_player_data_modal(UIData& ui_data) {
-	if (ImGui::BeginPopupModal("Player data", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+	if (ImGui::BeginPopupModal(CSTR(S("UI.PlayerData")), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
 		for (size_t i = 0; i < ui_data.solver->n_players(); ++i) {
 			auto const& player = ui_data.solver->player(i);
-			ImGui::TextUnformatted(fmt::format("{} - {} cards", player.name(), player.n_cards()).c_str());
+			ImGui::TextUnformatted(fmt::format("{} - {} {}", player.name(), player.n_cards(), S("UI.Cards")).c_str());
 		}
 
 		ImGui::Spacing();
 		ImGui::Separator();
 		ImGui::Spacing();
 
-		if (ImGui::Button("Ok")) {
+		if (ImGui::Button(CSTR(S("UI.Ok")))) {
 			ImGui::CloseCurrentPopup();
 		}
 
@@ -479,8 +522,6 @@ void show_player_data_modal(UIData& ui_data) {
 
 Result<void, std::string> my_main([[maybe_unused]] std::vector<std::string_view>&& arguments) {
 	using namespace std::literals;
-
-	TRY(Cluedo::Strings::load_from_file("res/lang/en.json"sv));
 
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) < 0) {
 		return { SDL_GetError() };
@@ -602,16 +643,16 @@ Result<void, std::string> my_main([[maybe_unused]] std::vector<std::string_view>
 		if (ImGui::Begin("Cluedo Solver", NULL, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar)) {
 			show_menubar(ui_data);
 
-			ImGui::SeparatorText("Information history");
+			ImGui::SeparatorText(CSTR(S("UI.InformationHistory")));
 			if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_DelayNormal)) {
-				ImGui::SetTooltip("This is the history of the information you have added to the solver.");
+				ImGui::SetTooltip("%s", CSTR(S("UI.InformationHistoryTooltipText")));
 			}
 
 			show_information_history_section(ui_data);
 
-			ImGui::SeparatorText("Solutions");
+			ImGui::SeparatorText(CSTR(S("UI.Solutions")));
 			if (ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip | ImGuiHoveredFlags_DelayNormal)) {
-				ImGui::SetTooltip("This is the list of solutions ordered by their probability.");
+				ImGui::SetTooltip("%s", CSTR(S("UI.SolutionsTooltipText")));
 			}
 
 			show_solutions_section(ui_data);
@@ -621,17 +662,17 @@ Result<void, std::string> my_main([[maybe_unused]] std::vector<std::string_view>
 		ImGui::PopStyleVar();
 
 		if (ui_data.show_new_game_modal) {
-			ImGui::OpenPopup("New game");
+			ImGui::OpenPopup(CSTR(S("UI.NewGame")));
 		}
 		show_new_game_modal(ui_data);
 
 		if (ui_data.show_add_information_modal) {
-			ImGui::OpenPopup("Add information");
+			ImGui::OpenPopup(CSTR(S("UI.AddInformation")));
 		}
 		show_add_information_modal(ui_data);
 
 		if (ui_data.show_player_data_modal) {
-			ImGui::OpenPopup("Player data");
+			ImGui::OpenPopup(CSTR(S("UI.PlayerData")));
 		}
 		show_player_data_modal(ui_data);
 
