@@ -81,15 +81,9 @@ void Solver::learn_from_suggestion(Suggestion const& suggestion, bool infer_new_
 }
 
 bool Solver::are_constraints_satisfied() const {
-	CardSet all_player_cards;
 	for (auto const& player : m_players) {
 		if (!CardSet::intersection(player.m_cards_in_hand, player.m_cards_not_in_hand).empty())
 			return false;
-
-		if (!CardSet::intersection(all_player_cards, player.m_cards_in_hand).empty())
-			return false;
-
-		all_player_cards.set_union(player.m_cards_in_hand);
 	}
 
 	return true;

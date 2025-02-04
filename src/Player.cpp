@@ -1,7 +1,5 @@
 #include "Player.hpp"
 
-#include <algorithm>
-
 namespace Cluedo {
 
 void Player::remove_superfluous_possibilities() {
@@ -40,6 +38,17 @@ void Player::simplify_possibilities_with_card(Card card, bool has_card) {
 
 		if (should_erase_possibility)
 			m_possibilities.erase(it);
+	}
+}
+
+void Player::check_if_all_cards_in_hand() {
+	if (m_card_count != m_cards_in_hand.size()) {
+		return;
+	}
+
+	for (auto const& card : CardUtils::cards()) {
+		if (!has_card(card))
+			add_not_in_hand_card(card);
 	}
 }
 

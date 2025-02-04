@@ -34,21 +34,25 @@ public:
 	void add_in_hand_card(Card card) {
 		m_cards_in_hand.insert(card);
 		simplify_possibilities_with_card(card, true);
+		check_if_all_cards_in_hand();
 	}
 
 	void add_not_in_hand_card(Card card) {
 		m_cards_not_in_hand.insert(card);
 		simplify_possibilities_with_card(card, false);
+		check_if_all_cards_in_hand();
 	}
 
 	void add_possible_cards(CardSet const& set) {
 		m_possibilities.push_back(set);
 		remove_superfluous_possibilities();
+		check_if_all_cards_in_hand();
 	}
 
 private:
 	void simplify_possibilities_with_card(Card, bool has_card);
 	void remove_superfluous_possibilities();
+	void check_if_all_cards_in_hand();
 
 	std::string m_name;
 	std::size_t m_card_count;
