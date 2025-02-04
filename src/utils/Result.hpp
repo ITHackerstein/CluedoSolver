@@ -10,11 +10,9 @@
 template<typename ValueType, typename ErrorType>
 class [[nodiscard]] Result {
 public:
-	// cppcheck-suppress noExplicitConstructor
 	Result(ValueType&& value)
 	  : m_impl(std::forward<ValueType>(value)) {}
 
-	// cppcheck-suppress noExplicitConstructor
 	Result(ErrorType&& error)
 	  : m_impl(std::forward<ErrorType>(error)) {}
 
@@ -52,10 +50,8 @@ private:
 template<typename ErrorType>
 class Result<void, ErrorType> {
 public:
-	// cppcheck-suppress noExplicitConstructor
 	Result() = default;
 
-	// cppcheck-suppress noExplicitConstructor
 	Result(ErrorType&& error)
 	  : m_impl(std::forward<ErrorType>(error)) {}
 

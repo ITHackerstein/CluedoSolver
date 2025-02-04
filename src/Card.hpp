@@ -74,7 +74,6 @@ struct CardUtils {
 
 	struct CardIterator {
 		std::uint8_t index;
-		// cppcheck-suppress noExplicitConstructor
 		constexpr CardIterator(std::uint8_t i)
 		  : index(i) {}
 
