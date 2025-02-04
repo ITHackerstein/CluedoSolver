@@ -188,8 +188,10 @@ void show_information_history_section(UIData& ui_data) {
 			}
 
 			if (ImGui::BeginListBox("##information-history-listbox", { -1, -1 })) {
-				for (auto const& [information, solver] : ui_data.information_history) {
-					ImGui::Selectable(information.c_str());
+				for (std::size_t i = 0; i < ui_data.information_history.size(); ++i) {
+					ImGui::PushID(i);
+					ImGui::Selectable(ui_data.information_history[i].first.c_str());
+					ImGui::PopID();
 				}
 				ImGui::EndListBox();
 			}
@@ -451,7 +453,7 @@ void show_add_information_modal(UIData& ui_data) {
 			}
 
 			if (ui_data.selected_tab_index == 1 && ui_data.second_tab_suggestion.responding_player_index == ui_data.second_tab_suggestion.suggesting_player_index) {
-				ImGui::OpenPopup("Error");
+				ImGui::OpenPopup(CSTR(S("UI.Error")));
 				ui_data.error_message = fmt::format("{}: {}!", S("UI.ErrorWhileLearningNewInformation"), Cluedo::Error::SuggestingPlayerEqualToRespondingPlayer);
 			} else {
 				auto old_solver = *ui_data.solver;
@@ -460,7 +462,7 @@ void show_add_information_modal(UIData& ui_data) {
 					ui_data.solver->learn_player_card_state(ui_data.first_tab_selected_player, ui_data.first_tab_selected_card, ui_data.first_tab_is_has_card_checked);
 
 					auto player_name = ui_data.solver->player(ui_data.first_tab_selected_player).name();
-					information = fmt::format("{} {} {}", player_name, S(ui_data.first_tab_is_has_card_checked ? "UI.Has" : "UI.Hasnt"), ui_data.first_tab_selected_card);
+					information = fmt::format("{} {} {}", player_name, S(ui_data.first_tab_is_has_card_checked ? "UI.HasGot" : "UI.HasntGot"), ui_data.first_tab_selected_card);
 				} else if (ui_data.selected_tab_index == 1) {
 					ui_data.solver->learn_from_suggestion(ui_data.second_tab_suggestion);
 
