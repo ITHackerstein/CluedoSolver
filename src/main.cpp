@@ -297,7 +297,7 @@ void show_new_game_modal(UIData& ui_data) {
 void show_player_combobox(char const* id, Cluedo::Solver const& solver, size_t& selection) {
 	ImGui::PushID(id);
 	if (ImGui::BeginCombo("##", solver.player(selection).name().c_str(), ImGuiComboFlags_WidthFitPreview)) {
-		for (size_t i = 0; i < solver.n_players(); ++i) {
+		for (size_t i = 0; i < solver.player_count(); ++i) {
 			bool is_selected = selection == i;
 			if (ImGui::Selectable(solver.player(i).name().c_str(), is_selected)) {
 				selection = i;
@@ -322,7 +322,7 @@ void show_optional_player_combobox(char const* id, Cluedo::Solver const& solver,
 			ImGui::SetItemDefaultFocus();
 		}
 
-		for (size_t i = 0; i < solver.n_players(); ++i) {
+		for (size_t i = 0; i < solver.player_count(); ++i) {
 			bool is_selected = *selection == i;
 			if (ImGui::Selectable(solver.player(i).name().c_str(), is_selected)) {
 				selection = i;
@@ -503,9 +503,9 @@ void show_add_information_modal(UIData& ui_data) {
 
 void show_player_data_modal(UIData& ui_data) {
 	if (ImGui::BeginPopupModal(CSTR(S("UI.PlayerData")), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-		for (size_t i = 0; i < ui_data.solver->n_players(); ++i) {
+		for (size_t i = 0; i < ui_data.solver->player_count(); ++i) {
 			auto const& player = ui_data.solver->player(i);
-			ImGui::TextUnformatted(fmt::format("{} - {} {}", player.name(), player.n_cards(), S("UI.Cards")).c_str());
+			ImGui::TextUnformatted(fmt::format("{} - {} {}", player.name(), player.card_count(), S("UI.Cards")).c_str());
 		}
 
 		ImGui::Spacing();

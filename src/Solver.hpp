@@ -20,7 +20,7 @@ public:
 
 	static Result<Solver, Error> create(std::vector<PlayerData> const&);
 
-	std::size_t n_players() const { return m_players.size() - 1; }
+	std::size_t player_count() const { return m_players.size() - 1; }
 
 	Player const& player(std::size_t player_index) const { return m_players.at(player_index); }
 	Player& player(std::size_t player_index) { return m_players.at(player_index); }

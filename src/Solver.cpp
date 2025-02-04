@@ -201,7 +201,7 @@ bool Solver::assign_cards_to_players(std::vector<Card> const& cards) {
 	for (std::size_t player_index = 0; player_index < m_players.size() - 1; ++player_index) {
 		auto& p = player(player_index);
 
-		auto cards_to_assign_count = p.n_cards() - p.m_cards_in_hand.size();
+		auto cards_to_assign_count = p.card_count() - p.m_cards_in_hand.size();
 		if (cards.size() - next_card_to_assign_index < cards_to_assign_count)
 			return false;
 
@@ -220,7 +220,7 @@ bool Solver::assign_cards_to_players(std::vector<Card> const& cards) {
 bool Solver::are_constraints_satisfied_for_solution_search() const {
 	CardSet all_player_cards;
 	for (auto const& player : m_players) {
-		if (player.m_cards_in_hand.size() != player.n_cards())
+		if (player.m_cards_in_hand.size() != player.card_count())
 			return false;
 
 		if (!CardSet::intersection(all_player_cards, player.m_cards_in_hand).empty())

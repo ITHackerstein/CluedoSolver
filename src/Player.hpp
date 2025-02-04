@@ -16,10 +16,10 @@ class Player {
 
 public:
 	explicit Player(std::string const& name, std::size_t n_cards)
-	  : m_name(name), m_n_cards(n_cards) {}
+	  : m_name(name), m_card_count(n_cards) {}
 
 	std::string const& name() const { return m_name; }
-	std::size_t n_cards() const { return m_n_cards; }
+	std::size_t card_count() const { return m_card_count; }
 
 	std::optional<bool> has_card(Card card) const {
 		if (m_cards_in_hand.contains(card))
@@ -51,7 +51,7 @@ private:
 	void remove_superfluous_possibilities();
 
 	std::string m_name;
-	std::size_t m_n_cards;
+	std::size_t m_card_count;
 
 	CardSet m_cards_in_hand;
 	CardSet m_cards_not_in_hand;
