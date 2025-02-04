@@ -37,4 +37,7 @@ private:
 	nlohmann::json m_strings;
 };
 
+#define LS(key) (Cluedo::LanguageStrings::the().get_string((key)))
+#define CSTR(s) (std::string { (s) }.c_str())
+
 };

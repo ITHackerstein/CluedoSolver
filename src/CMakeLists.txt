@@ -95,6 +95,11 @@ add_executable(CluedoSolver
 	Player.cpp
 	Solver.cpp
 	LanguageStrings.cpp
+	ui/AddInformationModal.cpp
+	ui/ErrorModal.cpp
+	ui/MainWindow.cpp
+	ui/NewGameModal.cpp
+	ui/PlayerDataModal.cpp
 	${IMGUI_SOURCE_FILES}
 	main.cpp
 )

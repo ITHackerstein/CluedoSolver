@@ -17,14 +17,14 @@ Result<Solver, Error> Solver::create(std::vector<PlayerData> const& players_data
 	if (players_data.size() < MIN_PLAYER_COUNT || players_data.size() > MAX_PLAYER_COUNT)
 		return Error::InvalidNumberOfPlayers;
 
-	std::size_t total_cards = std::accumulate(players_data.begin(), players_data.end(), SOLUTION_CARD_COUNT, [](std::size_t const& accumulator, PlayerData const& player_data) { return accumulator + player_data.n_cards; });
+	std::size_t total_cards = std::accumulate(players_data.begin(), players_data.end(), SOLUTION_CARD_COUNT, [](std::size_t const& accumulator, PlayerData const& player_data) { return accumulator + player_data.card_count; });
 	if (total_cards != CardUtils::CARD_COUNT)
 		return Error::InvalidNumberOfCards;
 
 	std::vector<Player> players;
 	for (std::size_t i = 0; i < players_data.size(); ++i) {
 		auto name = !players_data.at(i).name.empty() ? players_data.at(i).name : fmt::format("{} {}", Cluedo::LanguageStrings::the().get_string("Solver.Player"), i + 1);
-		players.emplace_back(name, players_data.at(i).n_cards);
+		players.emplace_back(name, players_data.at(i).card_count);
 	}
 	players.emplace_back("", SOLUTION_CARD_COUNT);
 

@@ -9,7 +9,7 @@ namespace Cluedo {
 
 struct PlayerData {
 	std::string name;
-	std::size_t n_cards;
+	std::size_t card_count;
 };
 
 class Solver {
