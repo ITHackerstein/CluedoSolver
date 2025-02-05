@@ -3,4 +3,4 @@ repos:
     rev: 'v19.1.7'
     hooks:
     -   id: clang-format
-        exclude: (^res/)|(^src/libs)|(^src/fonts)
+        exclude: (^docs)|(^res)|(^src/libs)|(^src/fonts)

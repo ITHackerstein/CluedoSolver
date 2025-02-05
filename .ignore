@@ -3,3 +3,6 @@ build/
 src/libs
 src/fonts
 src/lang
+res/icons
+res/fonts
+docs/html

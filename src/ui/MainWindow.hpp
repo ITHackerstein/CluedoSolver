@@ -5,14 +5,31 @@
 #include "NewGameModal.hpp"
 #include "PlayerDataModal.hpp"
 
+/// \file MainWindow.hpp
+/// \brief The file that contains the definition of the \ref Cluedo::UI::MainWindow class.
+
 namespace Cluedo {
 
 namespace UI {
 
+/// \brief The main window of the application.
+///
+/// This class is responsible for showing the main window of the application.
+/// It has a menubar with three sections:
+/// * _Game_: contains the items _New_ (\ref Cluedo::UI::NewGameModal), _Add information (\ref Cluedo::UI::AddInformationModal)_ and _Player data_ (\ref Cluedo::UI::PlayerDataModal);
+/// * _Settings_: contains the items _Language_ (allows to change the language of the application) and _Theme_ (allows to change the theme of the application);
+/// * _About_: when clicking this item it will show brief information about the application.
+///
+/// The main window also contains two sections:
+/// * the _Information history_ section that shows the information that was added to the solver;
+/// * the _Solutions_ section that shows the solutions for the game with their respective probabilities.
+/// \note This two sections will be available only after a game is created.
 class MainWindow {
 public:
+	/// Constructs the window.
 	explicit MainWindow();
 
+	/// Shows the window.
 	void show();
 
 private:

@@ -2,7 +2,6 @@
 	"Error": {
 		"InvalidNumberOfPlayers": "numero di giocatori non valido",
 		"InvalidNumberOfCards": "numero di carte non valido",
-		"SuggestingPlayerEqualToRespondingPlayer": "il giocatore che suggerisce è uguale a quello che risponde",
 		"InvalidInformation": "informazione non valida"
 	},
 	"CardCategory": {
