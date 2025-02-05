@@ -102,6 +102,7 @@ add_executable(CluedoSolver
 	ui/PlayerDataModal.cpp
 	${IMGUI_SOURCE_FILES}
 	main.cpp
+	icon.rc
 )
 
 add_dependencies(CluedoSolver Fonts Languages)

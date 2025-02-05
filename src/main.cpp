@@ -1,3 +1,4 @@
+#include "../res/icons/icon.cpp"
 #include "fonts/fonts.cpp"
 #include "ui/MainWindow.hpp"
 #include "utils/IconsFontAwesome.h"
@@ -20,6 +21,37 @@
 #include <imgui_stdlib.h>
 
 using namespace std::literals;
+
+static void set_window_icon(SDL_Window* window) {
+	std::uint32_t red_mask, green_mask, blue_mask, alpha_mask;
+
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	int shift = (my_icon.bytes_per_pixel == 3) ? 8 : 0;
+	red_mask = 0xff000000 >> shift;
+	green_mask = 0x00ff0000 >> shift;
+	blue_mask = 0x0000ff00 >> shift;
+	alpha_mask = 0x000000ff >> shift;
+#else
+	red_mask = 0x000000ff;
+	green_mask = 0x0000ff00;
+	blue_mask = 0x00ff0000;
+	alpha_mask = (app_icon.bytes_per_pixel == 3) ? 0 : 0xff000000;
+#endif
+	SDL_Surface* icon_surface = SDL_CreateRGBSurfaceFrom(
+	  (void*)(app_icon.pixel_data),
+	  app_icon.width,
+	  app_icon.height,
+	  app_icon.bytes_per_pixel * 8,
+	  app_icon.bytes_per_pixel * app_icon.width,
+	  red_mask,
+	  green_mask,
+	  blue_mask,
+	  alpha_mask
+	);
+
+	SDL_SetWindowIcon(window, icon_surface);
+	SDL_FreeSurface(icon_surface);
+}
 
 Result<void, std::string> my_main([[maybe_unused]] std::vector<std::string_view>&& arguments) {
 	using namespace std::literals;
@@ -77,6 +109,8 @@ Result<void, std::string> my_main([[maybe_unused]] std::vector<std::string_view>
 	if (window == nullptr) {
 		return { SDL_GetError() };
 	}
+
+	set_window_icon(window);
 
 	SDL_GLContext gl_context = SDL_GL_CreateContext(window);
 	if (gl_context == nullptr) {
