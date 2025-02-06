@@ -264,18 +264,20 @@ std::vector<Solver::SolutionProbabilityPair> Solver::find_most_likely_solutions(
 
 				auto solver_first_copy = *this;
 
-				solver_first_copy.learn_player_card_state(solver_first_copy.solution_player_index(), suspect, true, false);
-				solver_first_copy.learn_player_card_state(solver_first_copy.solution_player_index(), weapon, true, false);
-				solver_first_copy.learn_player_card_state(solver_first_copy.solution_player_index(), room, true, false);
-
 				std::vector<Card> unused_cards;
 				for (auto card : CardUtils::cards()) {
 					if (std::any_of(solver_first_copy.m_players.begin(), solver_first_copy.m_players.end(), [card](auto const& player) { return player.m_cards_in_hand.contains(card); }))
 						continue;
 
+					if (card == suspect || card == weapon || card == room)
+						continue;
+
 					unused_cards.push_back(card);
 				}
 
+				solver_first_copy.learn_player_card_state(solver_first_copy.solution_player_index(), suspect, true, false);
+				solver_first_copy.learn_player_card_state(solver_first_copy.solution_player_index(), weapon, true, false);
+				solver_first_copy.learn_player_card_state(solver_first_copy.solution_player_index(), room, true, false);
 				solver_first_copy.infer_new_information();
 
 				std::size_t valid_iterations = 0;
