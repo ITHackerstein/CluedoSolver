@@ -4,7 +4,7 @@ Cluedo Solver is a tool designed to help you win [Cluedo](https://en.wikipedia.o
 
 ## Releases
 
-In the future I will make a release for Linux and Windows, so you don't have to build the project from scratch.
+You can find precompiled releases for Windows and Linux in the [Releases](https://github.com/ITHackerstein/CluedoSolver/releases/) section in the format of an `.exe` for Windows and an `.AppImage` for Linux.
 
 ## Building from scratch
 
