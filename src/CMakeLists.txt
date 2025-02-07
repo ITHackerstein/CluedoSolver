@@ -140,3 +140,8 @@ endif()
 set_target_properties(CluedoSolver PROPERTIES LINK_SEARCH_START_STATIC ON)
 set_target_properties(CluedoSolver PROPERTIES LINK_SEARCH_END_STATIC ON)
 target_link_options(CluedoSolver PRIVATE -static-libgcc -static-libstdc++)
+
+install(
+	TARGETS CluedoSolver
+	RUNTIME DESTINATION bin
+)
