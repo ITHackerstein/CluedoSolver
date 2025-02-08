@@ -49,7 +49,23 @@ void Solver::learn_player_card_state(std::size_t player_index, Card card, bool h
 }
 
 void Solver::learn_player_has_any_of_cards(std::size_t player_index, CardSet const& card_set, bool infer_new_info) {
-	player(player_index).add_possible_cards(card_set);
+	CardSet new_card_set;
+	for (auto card : card_set) {
+		if (player(player_index).m_cards_in_hand.contains(card))
+			return;
+
+		if (player(player_index).m_cards_not_in_hand.contains(card))
+			continue;
+
+		new_card_set.insert(card);
+	}
+
+	std::vector<Card> cards;
+	for (auto card : new_card_set) {
+		cards.push_back(card);
+	}
+
+	player(player_index).add_possible_cards(new_card_set);
 
 	if (infer_new_info)
 		infer_new_information();
